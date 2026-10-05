@@ -19,13 +19,13 @@
   <button data-route="courses">≡<span>コース</span></button>
   <button data-route="favorites">☆<span>お気に入り</span></button>
 </aside>
-<main id="app" aria-live="polite"></main>
+<main id="app" aria-live="polite"><div class="page-head"><h1 class="page-title">ホーム</h1></div><button class="search-box"><span>⌕</span><input readonly placeholder="店舗名・コード・住所を検索"></button><div class="quick-list"><button class="quick-card"><span class="left"><span class="quick-icon">⌕</span><span><strong>店舗を探す</strong><small>名前・コード・住所から</small></span></span><span class="chevron">›</span></button><button class="quick-card"><span class="left"><span class="quick-icon">≡</span><span><strong>コースから探す</strong><small>コース別に店舗を見る</small></span></span><span class="chevron">›</span></button></div><section class="section"><div class="section-head"><h2>お気に入り</h2></div><div class="empty"><strong>お気に入りはまだありません</strong><span>店舗を登録するとここに表示されます。</span></div></section><section class="section"><div class="section-head"><h2>最近見た店舗</h2></div><div class="empty"><strong>最近見た店舗はまだありません</strong></div></section></main>
 <nav class="mobile-nav" aria-label="メインメニュー">
   <button data-route="home">⌂<small>ホーム</small></button>
   <button data-route="search">⌕<small>店舗</small></button>
   <button data-route="courses">≡<small>コース</small></button>
   <button data-route="favorites">☆<small>お気に入り</small></button>
 </nav>
-<script src="./app.js?v=1"></script>
+<script>window.addEventListener("error",function(e){var a=document.getElementById("app");if(a&&!a.dataset.booted){a.innerHTML="<div class=\"empty\"><strong>niwasakiの起動に失敗しました</strong><span>JavaScriptの読み込みエラーです。再読み込みしてください。</span></div>";}});</script><script src="./app.js?v=20261005-1745"></script>
 </body>
 </html>
