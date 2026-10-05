@@ -2,54 +2,26 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<meta name="description" content="niwasaki — 店舗ごとの配送・納品情報をまとめて管理">
+<meta name="description" content="niwasaki — 店舗の配送情報を、すぐ確認。">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="data:,">
 <title>niwasaki</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="app-header">
-  <div><div class="eyebrow">niwasaki</div><h1>庭先</h1><p>店舗ごとの配送・納品情報をまとめて管理</p></div>
-  <div class="header-actions">
-    <button id="importExcelButton" class="secondary" type="button">Excelから取込</button>
-    <button id="importNiwaButton" class="secondary" type="button">.niwaを開く</button>
-    <button id="backupButton" class="secondary" type="button">全体バックアップ</button>
-    <button id="newStoreButton" class="primary">＋ 新規登録</button>
-    <input id="niwaInput" type="file" accept=".niwa" hidden>
-    <input id="excelInput" type="file" accept=".xlsx,.xls" hidden>
-  </div>
+<header class="topbar">
+  <button class="brand" id="brandButton" type="button" aria-label="ホーム">niwasaki</button>
+  <button class="header-new" id="headerNew" type="button">＋ 店舗登録</button>
 </header>
-<main class="layout">
-<aside class="sidebar">
-<div class="sidebar-title">店舗一覧</div>
-<input id="searchInput" class="search" type="search" placeholder="店舗名・コード・住所を検索">
-<div id="storeList" class="store-list"></div>
-</aside>
-<section class="detail">
-<div id="emptyState" class="empty-state"><div class="empty-icon">⌕</div><h2>店舗を選択してください</h2><p>「新規登録」から店舗を登録できます。</p></div>
-<form id="storeForm" class="store-form hidden">
-<div id="importNotice" class="notice hidden"></div>
-<div class="detail-header"><div><div class="eyebrow">STORE</div><h2 id="detailTitle">新規登録</h2></div><div class="actions"><button type="button" id="mapsButton" class="secondary">地図を見る</button><button type="button" id="shareButton" class="secondary">共有</button><button type="button" id="cancelButton" class="secondary">キャンセル</button><button type="submit" class="primary">保存</button></div></div>
-<section class="card"><h3>基本情報</h3><div class="grid two">
-<label>店舗名 <span class="required">*</span><input id="name" required></label><label>店舗コード<input id="code"></label>
-<label>住所<input id="address"></label><label>電話番号<input id="phone" type="tel"></label>
-<label>コース<input id="course"></label><label>店舗識別情報<input id="identifier"></label>
-</div></section>
-<section class="card"><h3>配送情報</h3><div class="grid two">
-<label>納品方法<input id="deliveryMethod"></label><label>納品場所<input id="deliveryPlace"></label>
-<label>搬入口<input id="entrance"></label><label>駐車場所<input id="parking"></label>
-<label>車両進入経路<input id="vehicleRoute"></label><label>鍵・警備<input id="security"></label>
-<label>空ケース等の置き場所<input id="emptyCases"></label><label>時間制限<input id="timeRestriction"></label>
-</div></section>
-<section class="card"><h3>注意事項</h3><textarea id="notes" rows="7"></textarea></section>
-<section class="card"><h3>写真</h3><div id="photoDrop" class="photo-drop"><div class="photo-drop-icon">＋</div><strong>写真を追加</strong><span>ドラッグ＆ドロップ、または選択</span><button type="button" id="photoPickerButton" class="secondary">画像を選択</button><input id="photoInput" type="file" accept="image/*" multiple hidden></div><div id="photoList" class="photo-list"></div></section>
-<section class="card meta"><h3>管理情報</h3><div class="meta-grid"><div><span>作成日時</span><strong id="createdAt">—</strong></div><div><span>更新日時</span><strong id="updatedAt">—</strong></div><div><span>バージョン</span><strong id="dataVersion">1</strong></div></div></section>
-</form></section></main>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<main id="app"></main>
+<nav class="mobile-nav" aria-label="メインメニュー">
+  <button data-nav="home"><span>⌂</span><small>ホーム</small></button>
+  <button data-nav="search"><span>⌕</span><small>店舗</small></button>
+  <button data-nav="courses"><span>≡</span><small>コース</small></button>
+  <button data-nav="favorites"><span>☆</span><small>お気に入り</small></button>
+</nav>
 <script src="app.js"></script>
-<script>if("serviceWorker" in navigator && location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(()=>{});</script>
-</body></html>
+<script>if("serviceWorker" in navigator && location.protocol!=="file:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}</script>
+</body>
+</html>
