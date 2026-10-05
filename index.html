@@ -2,7 +2,7 @@
 <html lang="ja"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#fff"><link rel="manifest" href="manifest.json"><title>niwasaki</title>
-<link rel="stylesheet" href="styles.css"></head><body>
+<link rel="stylesheet" href="styles.css?v=20261005-3"></head><body>
 <header class="topbar">
 <button class="brand" id="brand">niwasaki</button>
 <div class="top-actions">
@@ -22,5 +22,5 @@
 </nav>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="app.js"></script><script>if("serviceWorker"in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(()=>{});</script>
+<script src="app.js?v=20261005-3"></script><script>if("serviceWorker"in navigator&&location.protocol!=="file:")navigator.serviceWorker.getRegistrations().then(rs=>Promise.all(rs.map(r=>r.unregister()))).catch(()=>{});</script>
 </body></html>
