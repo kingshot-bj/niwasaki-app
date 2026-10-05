@@ -23,19 +23,19 @@ function seedData() {
   const t = now();
   state.stores = [
     {
-      id:"test-sg", name:"SGキャリア（テスト）", code:"TEST-SG", address:"（テストデータ）", phone:"",
+      id:"test-sg", name:"SGキャリア（テスト）", status:"通常", code:"TEST-SG", address:"（テストデータ）", phone:"",
       course:"テストコース", deliveryPlace:"3階 担当者席付近", entrance:"駐車場近くの自動扉 → EV",
       parking:"1階 月極駐車場（指定位置）", vehicleRoute:"駐車後、建物内へ", security:"日曜は入口開放待ち",
       emptyCases:"空オリコン", timeRestriction:"9:15までは駐車不可 / 9:20納品開始",
       notes:"ラジオ体操終了まで待機。資料由来のテストデータ。", favorite:true,
       procedure:["駐車場近くの自動扉から入る","左側のEVで3階へ","9:20のラジオ体操終了まで待機","担当者席へオリコンを運ぶ","メールバッグを受け渡し、記帳する"],
-      source:"【最新】★SGキャリア.pdf", updatedAt:t
+      sources:[{name:"【最新】★SGキャリア.pdf",type:"PDF"}], history:[{id:uid("h"),date:t,title:"テストデータ登録",summary:"旧庭先資料から初期登録",editor:"テスト",status:"approved"}], updatedAt:t
     },
     {
       id:"test-wise-west", name:"ワイズ ペリエ西小中台店（テスト）", code:"TEST-WISE-01", address:"（テストデータ）", phone:"",
       course:"三郷汎用2コース", deliveryPlace:"デリカ", entrance:"客駐の奥の搬入口", parking:"客駐の奥", vehicleRoute:"",
       security:"", emptyCases:"", timeRestriction:"指定時間内に駐車", notes:"店舗内を通ってデリカへ。持参した台車を使用。",
-      favorite:false, procedure:["客駐の奥の搬入口へ進む","持参した台車で店舗内を通ってデリカへ"], source:"三郷汎用2コース 1.17.pdf", updatedAt:t
+      favorite:false, procedure:["客駐の奥の搬入口へ進む","持参した台車で店舗内を通ってデリカへ"], sources:[{name:"三郷汎用2コース 1.17.pdf",type:"PDF"}], history:[{id:uid("h"),date:t,title:"テストデータ登録",summary:"旧庭先資料から初期登録",editor:"テスト",status:"approved"}], updatedAt:t
     },
     {
       id:"test-wise-westchiba", name:"ワイズ ペリエ西千葉店（テスト）", code:"TEST-WISE-02", address:"（テストデータ）", phone:"",
@@ -62,12 +62,13 @@ function seedData() {
       favorite:false, procedure:["客駐へ入る","左手奥の店舗裏側へ進む"], source:"三郷汎用2コース 1.17.pdf", updatedAt:t
     }
   ];
+  state.stores = state.stores.map(normalizeStore);
   state.courses = [{id:"test-course-1",name:"三郷汎用2コース",description:"旧庭先資料をもとにしたテスト用コース。",storeIds:["test-wise-west","test-wise-westchiba","test-wise-inage","test-wise-makuhari","test-wise-kasumi"]}];
   state.manuals = [{
     id:"test-manual-leoc",name:"レオック ドライバーマニュアル（テスト）",version:"2023-08-01",
     sections:["運行前","積込み","配送中","納品時","報告・連絡・相談","動態管理","緊急連絡先"],
     notes:["納品場所は店舗カルテに準じる","納品時間を勝手に変更しない","配送上のトラブルは速やかに報告"],
-    source:"レオックドライバーマニュアル23.8.1更新.pdf"
+    sources:[{name:"レオックドライバーマニュアル23.8.1更新.pdf",type:"PDF"}]
   }];
 }
 
@@ -75,9 +76,10 @@ function load() {
   try {
     const value = JSON.parse(localStorage.getItem(KEY) || "null");
     if (value && Array.isArray(value.stores)) {
-      state.stores = value.stores;
+      state.stores = value.stores.map(normalizeStore);
       state.courses = Array.isArray(value.courses) ? value.courses : [];
       state.manuals = Array.isArray(value.manuals) ? value.manuals : [];
+      save();
       return;
     }
   } catch {}
@@ -91,12 +93,27 @@ function save() {
   }));
 }
 
-function blankStore() {
-  return {
-    id:uid(),name:"",code:"",address:"",phone:"",course:"",deliveryPlace:"",
-    entrance:"",parking:"",vehicleRoute:"",security:"",emptyCases:"",
-    timeRestriction:"",notes:"",favorite:false,procedure:[],source:"",updatedAt:now()
+function normalizeStore(store) {
+  const base = {
+    id: uid(), name:"", code:"", address:"", phone:"", course:"",
+    status:"通常", deliveryPlace:"", entrance:"", parking:"", vehicleRoute:"",
+    security:"", emptyCases:"", timeRestriction:"", notes:"",
+    procedure:[], photos:[], customFields:[], history:[], sources:[],
+    favorite:false, createdAt:now(), updatedAt:now()
   };
+  const merged = Object.assign(base, store || {});
+  merged.photos = Array.isArray(merged.photos) ? merged.photos : [];
+  merged.customFields = Array.isArray(merged.customFields) ? merged.customFields : [];
+  merged.history = Array.isArray(merged.history) ? merged.history : [];
+  merged.sources = Array.isArray(merged.sources)
+    ? merged.sources
+    : (merged.source ? [{name: merged.source, type:"source"}] : []);
+  delete merged.source;
+  return merged;
+}
+
+function blankStore() {
+  return normalizeStore({});
 }
 
 function navigate(route) {
@@ -188,8 +205,10 @@ function courseDetail(id) {
 function detail() {
   const store=state.stores.find(x=>x.id===state.selectedId);
   if(!store)return navigate("search");
-  const rows=[["コース",store.course],["納品場所",store.deliveryPlace],["搬入口",store.entrance],["駐車場所",store.parking],["車両進入経路",store.vehicleRoute],["鍵・警備",store.security],["空ケース等",store.emptyCases],["時間制限",store.timeRestriction],["注意事項",store.notes]].filter(x=>x[1]);
-  const info=rows.length?rows.map(x=>'<div class="info-row"><b>'+x[0]+'</b><span>'+esc(x[1])+'</span></div>').join(""):empty("配送情報がありません");
+  const rows=[["状態",store.status],["コース",store.course],["納品場所",store.deliveryPlace],["搬入口",store.entrance],["駐車場所",store.parking],["車両進入経路",store.vehicleRoute],["鍵・警備",store.security],["空ケース等",store.emptyCases],["時間制限",store.timeRestriction],["注意事項",store.notes]].filter(x=>x[1]);
+  const customRows=store.customFields.filter(x=>x&&x.label).map(x=>[x.label,x.value]).filter(x=>x[1]);
+  const allRows=rows.concat(customRows);
+  const info=allRows.length?allRows.map(x=>'<div class="info-row"><b>'+x[0]+'</b><span>'+esc(x[1])+'</span></div>').join(""):empty("配送情報がありません");
   const procedure=Array.isArray(store.procedure)&&store.procedure.length?'<section class="section"><div class="section-head"><h2>作業手順</h2></div><ol class="procedure">'+store.procedure.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ol></section>':"";
   $("app").innerHTML='<div class="detail"><button class="back" id="detailBack">‹ 店舗一覧へ戻る</button><div class="detail-head"><div><h1 class="detail-title">'+esc(store.name)+'</h1><div class="meta">コード '+esc(store.code||"—")+'</div><div class="meta">'+esc(store.address||"住所未登録")+'</div>'+
     (store.phone?'<div class="meta">☎ '+esc(store.phone)+'</div>':"")+'</div><button class="star '+(store.favorite?"on":"")+'" id="detailFavorite">'+(store.favorite?"★":"☆")+'</button></div>'+
@@ -201,7 +220,11 @@ function detail() {
   $("mapButton").onclick=()=>{if(store.address&&store.address!=="（テストデータ）")window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(store.address),"_blank");};
   $("infoTab").onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));$("infoTab").classList.add("active");$("detailContent").innerHTML=info+procedure;};
   $("procedureTab").onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));$("procedureTab").classList.add("active");$("detailContent").innerHTML=procedure||empty("作業手順がありません");};
-  $("sourceTab").onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));$("sourceTab").classList.add("active");$("detailContent").innerHTML='<div class="info-row"><b>出典</b><span>'+esc(store.source||"未登録")+'</span></div><div class="info-row"><b>データ状態</b><span>旧庭先資料をもとにしたテストデータ</span></div>';};
+  $("sourceTab").onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));$("sourceTab").classList.add("active");
+    const sources=store.sources.length?store.sources.map(x=>'<div class="info-row"><b>'+esc(x.type||"資料")+'</b><span>'+esc(x.name||"名称未設定")+'</span></div>').join(""):empty("出典がありません");
+    const history=store.history.length?'<section class="section"><div class="section-head"><h2>更新履歴</h2></div><div class="info">'+store.history.slice().reverse().map(h=>'<div class="info-row"><b>'+esc(h.title||"更新")+'</b><span>'+esc(h.date||"")+'<br>'+esc(h.summary||"")+'<br>編集：'+esc(h.editor||"")+'</span></div>').join("")+'</div></section>':"";
+    $("detailContent").innerHTML=sources+history;
+  };
 }
 
 function field(key,label,store,full) {
@@ -219,7 +242,11 @@ function edit(id) {
   $("cancelEdit").onclick=cancel; $("cancelButton").onclick=cancel;
   $("storeForm").onsubmit=(event)=>{event.preventDefault();
     ["name","code","address","phone","course","deliveryPlace","entrance","parking","vehicleRoute","security","emptyCases","timeRestriction","notes"].forEach(k=>store[k]=$("field_"+k).value.trim());
-    store.updatedAt=now();save();state.selectedId=store.id;state.route="detail";render();
+    const changedAt=now();
+    store.updatedAt=changedAt;
+    store.history=Array.isArray(store.history)?store.history:[];
+    store.history.push({id:uid("h"),date:changedAt,title:isNew?"店舗登録":"店舗情報更新",summary:"基本情報・配送情報を保存",editor:"現場ユーザー",status:"draft"});
+    save();state.selectedId=store.id;state.route="detail";render();
   };
 }
 
