@@ -78,7 +78,7 @@ function edit(id){
 }
 function toggleFav(id){const s=state.stores.find(x=>x.id===id);if(!s)return;s.favorite=!s.favorite;save();if(state.view==="home")home();else if(state.view==="search"||state.view==="favorites")search();else detail(id)}
 function render(){document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b.dataset.nav===state.view));if(state.view==="home")home();else if(state.view==="search")search();else if(state.view==="courses")coursesPage();else if(state.view==="favorites"){state.favOnly=true;search()}else detail(state.selectedId)}
-document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>go(b.dataset.nav));$("brandButton").onclick=()=>go("home");$("headerNew").onclick=()=>edit();
+document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>go(b.dataset.nav));
 
 // --- V1 feature layer: Excel / .niwa / backup / photos / recent ---
 function download(name,text,type="application/json"){const b=new Blob([text],{type});const u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),500)}
