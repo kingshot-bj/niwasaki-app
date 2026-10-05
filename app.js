@@ -231,15 +231,86 @@ function field(key,label,store,full) {
   return '<div class="field '+(full?"full":"")+'"><label>'+label+'</label>'+(full?'<textarea id="field_'+key+'">'+esc(store[key])+'</textarea>':'<input id="field_'+key+'" value="'+esc(store[key])+'">')+'</div>';
 }
 
+function addCustomField(store, label = "", value = "") {
+  store.customFields = Array.isArray(store.customFields) ? store.customFields : [];
+  store.customFields.push({
+    id: uid("cf"),
+    label,
+    value,
+    type: "text",
+    order: store.customFields.length,
+    visible: true
+  });
+}
+
+function customFieldEditor(store) {
+  store.customFields = Array.isArray(store.customFields) ? store.customFields : [];
+  const rows = store.customFields.map((item, index) =>
+    '<div class="custom-field-row" data-custom-index="' + index + '">' +
+      '<input class="custom-label" value="' + esc(item.label || "") + '" placeholder="項目名">' +
+      '<input class="custom-value" value="' + esc(item.value || "") + '" placeholder="内容">' +
+      '<button class="button secondary custom-remove" type="button">削除</button>' +
+    '</div>'
+  ).join("");
+  return '<section class="form-card"><div class="section-head"><h2>追加情報</h2>' +
+    '<button class="button secondary" type="button" id="addCustomField">＋ 情報を追加</button></div>' +
+    '<p class="page-sub">この店舗だけに必要な情報を追加できます。</p>' +
+    '<div id="customFields">' + (rows || '<div class="empty">追加情報はありません</div>') + '</div></section>';
+}
+
+function bindCustomFields(store) {
+  const wrap = $("customFields");
+  if (!wrap) return;
+  wrap.querySelectorAll(".custom-remove").forEach((button) => {
+    button.onclick = () => {
+      const row = button.closest(".custom-field-row");
+      const index = Number(row.dataset.customIndex);
+      store.customFields.splice(index, 1);
+      renderCustomFieldEditor(store);
+    };
+  });
+  wrap.querySelectorAll(".custom-label").forEach((input) => {
+    input.oninput = () => {
+      const row = input.closest(".custom-field-row");
+      store.customFields[Number(row.dataset.customIndex)].label = input.value;
+    };
+  });
+  wrap.querySelectorAll(".custom-value").forEach((input) => {
+    input.oninput = () => {
+      const row = input.closest(".custom-field-row");
+      store.customFields[Number(row.dataset.customIndex)].value = input.value;
+    };
+  });
+}
+
+function renderCustomFieldEditor(store) {
+  const old = $("customFields");
+  if (!old) return;
+  old.outerHTML = '<div id="customFields">' +
+    (store.customFields.length
+      ? store.customFields.map((item, index) =>
+          '<div class="custom-field-row" data-custom-index="' + index + '">' +
+          '<input class="custom-label" value="' + esc(item.label || "") + '" placeholder="項目名">' +
+          '<input class="custom-value" value="' + esc(item.value || "") + '" placeholder="内容">' +
+          '<button class="button secondary custom-remove" type="button">削除</button></div>'
+        ).join("")
+      : '<div class="empty">追加情報はありません</div>') +
+    '</div>';
+  bindCustomFields(store);
+}
+
 function edit(id) {
   const isNew=!id; const store=id?state.stores.find(x=>x.id===id):blankStore(); if(!store)return;
   if(isNew)state.stores.push(store);
   $("app").innerHTML='<div class="detail"><button class="back" id="cancelEdit">‹ 戻る</button><div class="page-head"><h1 class="page-title">'+(isNew?"店舗を登録":"情報を変更")+'</h1></div><form id="storeForm">'+
     '<section class="form-card"><h2>基本情報</h2><div class="form-grid">'+field("name","店舗名",store)+field("code","店舗コード",store)+field("address","住所",store)+field("phone","電話番号",store)+field("course","コース",store)+'</div></section>'+
     '<section class="form-card"><h2>配送情報</h2><div class="form-grid">'+field("deliveryPlace","納品場所",store)+field("entrance","搬入口",store)+field("parking","駐車場所",store)+field("vehicleRoute","車両進入経路",store)+field("security","鍵・警備",store)+field("emptyCases","空ケース等の置き場所",store)+field("timeRestriction","時間制限",store)+field("notes","注意事項",store,true)+'</div></section>'+
+    customFieldEditor(store)+
     '<div class="form-actions"><button class="button secondary" type="button" id="cancelButton">キャンセル</button><button class="button primary" type="submit">保存する</button></div></form></div>';
   const cancel=()=>{if(isNew){state.stores=state.stores.filter(x=>x.id!==store.id);save();}navigate("search");};
   $("cancelEdit").onclick=cancel; $("cancelButton").onclick=cancel;
+  $("addCustomField").onclick=() => { addCustomField(store); renderCustomFieldEditor(store); };
+  bindCustomFields(store);
   $("storeForm").onsubmit=(event)=>{event.preventDefault();
     ["name","code","address","phone","course","deliveryPlace","entrance","parking","vehicleRoute","security","emptyCases","timeRestriction","notes"].forEach(k=>store[k]=$("field_"+k).value.trim());
     const changedAt=now();
