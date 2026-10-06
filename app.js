@@ -101,7 +101,7 @@ function normalizeStore(store) {
     status:"通常", deliveryPlace:"", entrance:"", parking:"", vehicleRoute:"",
     security:"", emptyCases:"", timeRestriction:"", notes:"",
     procedure:[], photos:[], customFields:[], history:[], sources:[],
-    favorite:false, archivedAt:null, archiveReason:"", createdAt:now(), updatedAt:now()
+    favorite:false, archivedAt:null, archiveReason:"", editing:false, editingStartedAt:null, editingUpdatedAt:null, editingBy:"", createdAt:now(), updatedAt:now()
   };
   const merged = Object.assign(base, store || {});
   merged.photos = Array.isArray(merged.photos) ? merged.photos : [];
@@ -228,7 +228,8 @@ function detail() {
   const allRows=rows.concat(customRows);
   const info=allRows.length?allRows.map(x=>'<div class="info-row"><b>'+x[0]+'</b><span>'+esc(x[1])+'</span></div>').join(""):empty("配送情報がありません");
   const procedure=Array.isArray(store.procedure)&&store.procedure.length?'<section class="section"><div class="section-head"><h2>作業手順</h2></div><ol class="procedure">'+store.procedure.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ol></section>':"";
-  $("app").innerHTML='<div class="detail"><button class="back" id="detailBack">‹ 店舗一覧へ戻る</button><div class="detail-head"><div><h1 class="detail-title">'+esc(store.name)+'</h1><div class="meta">コード '+esc(store.code||"—")+'</div><div class="meta">'+esc(store.address||"住所未登録")+'</div>'+
+  $("app").innerHTML='<div class="detail"><button class="back" id="detailBack">‹ 店舗一覧へ戻る</button><div class="detail-head"><div><h1 class="detail-title">'+esc(store.name)+'</h1><div class="meta">コード '+esc(store.code||"—")+'</div><div class="meta">'+esc(store.address||"住所未登録")+'</div>
+    (store.editing?'<div class="editing-badge">編集中 · 最終保存：'+esc(store.editingUpdatedAt||"")+' · '+esc(store.editingBy||"現場ユーザー")+"</div>":"") +'+
     (store.phone?'<div class="meta">☎ '+esc(store.phone)+'</div>':"")+'</div><button class="star '+(store.favorite?"on":"")+'" id="detailFavorite">'+(store.favorite?"★":"☆")+'</button></div>'+
     '<div class="actions"><button class="button secondary" id="mapButton">⌖ 地図を見る</button><button class="button primary" id="editButton">情報を変更</button><button class="button danger" id="archiveButton">アーカイブ</button></div>'+
     '<div class="tabs"><button class="tab active" id="infoTab">配送情報</button><button class="tab" id="procedureTab">作業手順</button><button class="tab" id="photoTab">写真</button><button class="tab" id="sourceTab">出典</button></div>'+
@@ -395,24 +396,32 @@ function edit(id) {
   $("app").innerHTML='<div class="detail"><button class="back" id="cancelEdit">‹ 戻る</button><div class="page-head"><h1 class="page-title">'+(isNew?"店舗を登録":"情報を変更")+'</h1></div><form id="storeForm">'+
     '<section class="form-card"><h2>基本情報</h2><div class="form-grid">'+field("name","店舗名",store)+field("code","店舗コード",store)+field("address","住所",store)+field("phone","電話番号",store)+field("course","コース",store)+'</div></section>'+
     '<section class="form-card"><h2>配送情報</h2><div class="form-grid">'+field("deliveryPlace","納品場所",store)+field("entrance","搬入口",store)+field("parking","駐車場所",store)+field("vehicleRoute","車両進入経路",store)+field("security","鍵・警備",store)+field("emptyCases","空ケース等の置き場所",store)+field("timeRestriction","時間制限",store)+field("notes","注意事項",store,true)+'</div></section>'+
-    '<section class="form-card"><div class="section-head"><h2>写真</h2></div><div class="photo-upload"><input id="photoInput" type="file" accept="image/*" multiple><input id="photoCategory" placeholder="分類（例：搬入口・駐車場所）"><input id="photoCaption" placeholder="写真の説明"><button class="button secondary" type="button" id="photoAddButton">写真を追加</button></div><div id="editPhotos">' + photoGallery(store,true) + '</div></section>'+
+    '<section class="form-card"><div class="section-head"><h2>写真</h2></div><div class="photo-upload"><label>項目名<select id="photoCategory"><option value="搬入口">搬入口</option><option value="駐車場所">駐車場所</option><option value="納品場所">納品場所</option><option value="車両進入経路">車両進入経路</option><option value="鍵・警備">鍵・警備</option><option value="空ケース等の置き場所">空ケース等の置き場所</option><option value="時間制限">時間制限</option><option value="注意事項">注意事項</option><option value="作業手順">作業手順</option><option value="店舗情報">店舗情報</option><option value="その他">その他</option></select></label><label id="photoOtherWrap" class="hidden-field">その他の項目名<input id="photoOtherCategory" placeholder="項目名を入力"></label><label>写真<input id="photoInput" type="file" accept="image/*" multiple></label><label>説明<input id="photoCaption" placeholder="写真の説明"></label><button class="button secondary" type="button" id="photoAddButton">写真を追加</button></div><div id="editPhotos">' + photoGallery(store,true) + '</div></section>'+
     customFieldEditor(store)+
-    '<div class="form-actions"><button class="button secondary" type="button" id="cancelButton">キャンセル</button><button class="button primary" type="submit">保存する</button></div></form></div>';
-  const cancel=()=>{if(isNew){state.stores=state.stores.filter(x=>x.id!==store.id);save();}navigate("search");};
+    '<div class="form-actions"><button class="button secondary" type="button" id="cancelButton">戻る</button><button class="button secondary" type="button" id="saveDraftButton">編集中として保存</button><button class="button primary" type="submit">保存して終了</button></div></form></div>';
+  const cancel=()=>{save(); state.selectedId=store.id; state.route="detail"; render();};
   $("cancelEdit").onclick=cancel; $("cancelButton").onclick=cancel;
+  const markEditing=()=>{store.editing=true; store.editingStartedAt=store.editingStartedAt||now(); store.editingUpdatedAt=now(); store.editingBy="現場ユーザー"; store.updatedAt=store.editingUpdatedAt; save();};
+  $("saveDraftButton").onclick=()=>{markEditing(); state.selectedId=store.id; state.route="detail"; render();};
   $("addCustomField").onclick=() => { addCustomField(store); renderCustomFieldEditor(store); };
   bindCustomFields(store);
   bindPhotoRemove(store);
+  const photoCategory = $("photoCategory");
+  const photoOtherWrap = $("photoOtherWrap");
+  const syncPhotoCategory = () => { photoOtherWrap.classList.toggle("hidden-field", photoCategory.value !== "その他"); };
+  photoCategory.onchange = syncPhotoCategory; syncPhotoCategory();
   $("photoAddButton").onclick = async () => {
     const input = $("photoInput");
     const files = Array.from(input.files || []);
     if (!files.length) return;
-    const category = $("photoCategory").value.trim() || "現場写真";
+    const selectedCategory = $("photoCategory").value;
+    const category = selectedCategory === "その他" ? ($("photoOtherCategory").value.trim() || "その他") : selectedCategory;
     const caption = $("photoCaption").value.trim();
     try {
       for (const file of files) await addPhotoFromFile(store, file, category, caption);
       $("photoInput").value = "";
       $("photoCaption").value = "";
+      $("photoOtherCategory").value = "";
       $("editPhotos").innerHTML = photoGallery(store,true);
       bindPhotoRemove(store);
     } catch (error) {
@@ -424,6 +433,10 @@ function edit(id) {
     ["name","code","address","phone","course","deliveryPlace","entrance","parking","vehicleRoute","security","emptyCases","timeRestriction","notes"].forEach(k=>store[k]=$("field_"+k).value.trim());
     const changedAt=now();
     store.updatedAt=changedAt;
+    store.editing=true;
+    store.editingStartedAt=store.editingStartedAt||changedAt;
+    store.editingUpdatedAt=changedAt;
+    store.editingBy="現場ユーザー";
     store.history=Array.isArray(store.history)?store.history:[];
     store.history.push({id:uid("h"),date:changedAt,title:isNew?"店舗登録":"店舗情報更新",summary:"基本情報・配送情報を保存",editor:"現場ユーザー",status:"draft"});
     save();state.selectedId=store.id;state.route="detail";render();
