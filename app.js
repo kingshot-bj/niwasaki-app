@@ -309,7 +309,7 @@ function bindPhotoRemove(store) {
   });
 }
 
-function resizePhoto(file, maxSize=1400, quality=0.78) {
+function resizePhoto(file, maxSize=1000, quality=0.62) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = reject;
@@ -330,19 +330,29 @@ function resizePhoto(file, maxSize=1400, quality=0.78) {
   });
 }
 
-function addPhotoFromFile(store, file, category, caption) {
-  return resizePhoto(file).then(dataUrl => {
-    store.photos = Array.isArray(store.photos) ? store.photos : [];
-    store.photos.push({
-      id: uid("photo"),
-      dataUrl,
-      category: category || "現場写真",
-      caption: caption || "",
-      capturedAt: new Date().toISOString().slice(0,10),
-      uploadedBy: "実機テスト"
-    });
-    save();
+async function addPhotoFromFile(store, file, category, caption) {
+  if (!file || !file.type || !file.type.startsWith("image/")) {
+    throw new Error("画像ファイルを選択してください。");
+  }
+  const dataUrl = await resizePhoto(file);
+  store.photos = Array.isArray(store.photos) ? store.photos : [];
+  store.photos.push({
+    id: uid("photo"),
+    dataUrl,
+    category: category || "現場写真",
+    caption: caption || "",
+    capturedAt: new Date().toISOString().slice(0,10),
+    uploadedBy: "実機テスト"
   });
+  try {
+    save();
+  } catch (error) {
+    store.photos.pop();
+    if (error && (error.name === "QuotaExceededError" || String(error).includes("quota"))) {
+      throw new Error("写真の保存容量を超えました。現在のV1は端末内保存のため、写真を減らしてから再度お試しください。");
+    }
+    throw error;
+  }
 }
 
 function field(key,label,store,full) {
@@ -549,7 +559,7 @@ function edit(id) {
       bindPhotoMetaEdit(store);
       bindPhotoRemove(store);
     } catch (error) {
-      alert("写真を追加できませんでした。");
+      alert(error && error.message ? error.message : "写真を追加できませんでした。");
       console.error(error);
     }
   };
