@@ -63,7 +63,7 @@ function seedData() {
     }
   ];
   state.stores = state.stores.map(normalizeStore);
-  if (Array.isArray(window.NIWASAKI_TEST_STORES)) state.stores = [...state.stores, ...window.NIWASAKI_TEST_STORES.map(normalizeStore).filter(x => !state.stores.some(s => s.id === x.id))];
+  if (Array.isArray(window.NIWASAKI_TEST_STORES)) { const imported = window.NIWASAKI_TEST_STORES.map(normalizeStore); const importedIds = new Set(imported.map(x => x.id)); state.stores = [...state.stores.filter(x => !importedIds.has(x.id)), ...imported]; }
   state.courses = [{id:"test-course-1",name:"三郷汎用2コース",description:"旧庭先資料をもとにしたテスト用コース。",storeIds:["test-wise-west","test-wise-westchiba","test-wise-inage","test-wise-makuhari","test-wise-kasumi"]}];
   state.manuals = [{
     id:"test-manual-leoc",name:"レオック ドライバーマニュアル（テスト）",version:"2023-08-01",
@@ -78,7 +78,7 @@ function load() {
     const value = JSON.parse(localStorage.getItem(KEY) || "null");
     if (value && Array.isArray(value.stores)) {
       state.stores = value.stores.map(normalizeStore);
-      if (Array.isArray(window.NIWASAKI_TEST_STORES)) state.stores = [...state.stores, ...window.NIWASAKI_TEST_STORES.map(normalizeStore).filter(x => !state.stores.some(s => s.id === x.id))];
+      if (Array.isArray(window.NIWASAKI_TEST_STORES)) { const imported = window.NIWASAKI_TEST_STORES.map(normalizeStore); const importedIds = new Set(imported.map(x => x.id)); state.stores = [...state.stores.filter(x => !importedIds.has(x.id)), ...imported]; }
       state.courses = Array.isArray(value.courses) ? value.courses : [];
       state.manuals = Array.isArray(value.manuals) ? value.manuals : [];
       save();
