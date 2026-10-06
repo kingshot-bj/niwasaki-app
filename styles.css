@@ -32,3 +32,5 @@
 .field textarea[data-autogrow]{min-height:46px;line-height:1.55;resize:none;overflow:hidden;box-sizing:border-box;transition:height .08s ease}.field textarea[data-autogrow]:focus{border-color:#999}
 
 .procedure-edit-row{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:start;margin-top:10px}.procedure-number{display:grid;place-items:center;min-height:46px;color:#666;font-weight:700}.procedure-input{width:100%;min-height:46px;padding:11px 12px;border:1px solid #d1d1ce;border-radius:10px;outline:0;background:#fff;line-height:1.55;resize:none;overflow:hidden;box-sizing:border-box}.procedure-input:focus{border-color:#999}@media(max-width:600px){.procedure-edit-row{grid-template-columns:28px 1fr}.procedure-edit-row .procedure-remove{grid-column:2;justify-self:start}}
+
+.field select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #d1d1ce;border-radius:10px;outline:0;background:#fff}.photo-edit-label{display:grid;gap:5px;font-size:13px;font-weight:650}.photo-edit-label input,.photo-edit-label select{width:100%;min-height:42px;padding:9px 10px;border:1px solid #d1d1ce;border-radius:9px;background:#fff}
