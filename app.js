@@ -373,7 +373,7 @@ function edit(id) {
     '<section class="form-card"><h2>基本情報</h2><div class="form-grid">'+field("name","店舗名",store)+field("code","店舗コード",store)+field("address","住所",store)+field("phone","電話番号",store)+field("course","コース",store)+'</div></section>'+
     '<section class="form-card"><h2>配送情報</h2><div class="form-grid">'+field("deliveryPlace","納品場所",store)+field("entrance","搬入口",store)+field("parking","駐車場所",store)+field("vehicleRoute","車両進入経路",store)+field("security","鍵・警備",store)+field("emptyCases","空ケース等の置き場所",store)+field("timeRestriction","時間制限",store)+field("notes","注意事項",store,true)+'</div></section>'+
     '<section class="form-card"><div class="section-head"><h2>写真</h2></div><div class="photo-upload"><input id="photoInput" type="file" accept="image/*" multiple><input id="photoCategory" placeholder="分類（例：搬入口・駐車場所）"><input id="photoCaption" placeholder="写真の説明"><button class="button secondary" type="button" id="photoAddButton">写真を追加</button></div><div id="editPhotos">' + photoGallery(store,true) + '</div></section>'+
-false
+    customFieldEditor(store)+
     '<div class="form-actions"><button class="button secondary" type="button" id="cancelButton">キャンセル</button><button class="button primary" type="submit">保存する</button></div></form></div>';
   const cancel=()=>{if(isNew){state.stores=state.stores.filter(x=>x.id!==store.id);save();}navigate("search");};
   $("cancelEdit").onclick=cancel; $("cancelButton").onclick=cancel;
