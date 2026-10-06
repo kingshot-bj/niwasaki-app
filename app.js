@@ -342,4 +342,4 @@ document.querySelectorAll("[data-route]").forEach(button=>button.onclick=()=>nav
 $("brand").onclick=()=>navigate("home");
 $("newStoreButton").onclick=()=>edit();
 $("adminButton").onclick=()=>alert("管理機能は次の実装段階で追加します。");
-boot();
+import("./test-data.js").then(m=>{window.NIWASAKI_TEST_STORES=m.NIWASAKI_TEST_STORES;boot();}).catch(()=>boot());
