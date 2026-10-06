@@ -220,13 +220,23 @@ function courseDetail(id) {
   $("courseBack").onclick=()=>coursesPage(); bindStoreRows();
 }
 
+function inlinePhotos(store, category) {
+  const photos = (Array.isArray(store.photos) ? store.photos : []).filter(p => !p.deletedAt && p.category === category);
+  if (!photos.length) return "";
+  return '<div class="inline-photos">' + photos.map(p =>
+    '<figure><img src="' + esc(p.dataUrl || p.url || "") + '" alt="' + esc(p.caption || category) + '">' +
+    (p.caption ? '<figcaption>' + esc(p.caption) + '</figcaption>' : '') +
+    '</figure>'
+  ).join("") + '</div>';
+}
+
 function detail() {
   const store=state.stores.find(x=>x.id===state.selectedId);
   if(!store)return navigate("search");
   const rows=[["状態",store.status],["コース",store.course],["納品場所",store.deliveryPlace],["搬入口",store.entrance],["駐車場所",store.parking],["車両進入経路",store.vehicleRoute],["鍵・警備",store.security],["空ケース等",store.emptyCases],["時間制限",store.timeRestriction],["注意事項",store.notes]].filter(x=>x[1]);
   const customRows=store.customFields.filter(x=>x&&x.label).map(x=>[x.label,x.value]).filter(x=>x[1]);
   const allRows=rows.concat(customRows);
-  const info=allRows.length?allRows.map(x=>'<div class="info-row"><b>'+x[0]+'</b><span>'+esc(x[1])+'</span></div>').join(""):empty("配送情報がありません");
+  const info=allRows.length?allRows.map(x=>'<div class="info-row"><b>'+esc(x[0])+'</b><span>'+esc(x[1])+inlinePhotos(store,x[0])+'</span></div>').join(""):empty("配送情報がありません");
   const procedure=Array.isArray(store.procedure)&&store.procedure.length?'<section class="section"><div class="section-head"><h2>作業手順</h2></div><ol class="procedure">'+store.procedure.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ol></section>':"";
   $("app").innerHTML='<div class="detail"><button class="back" id="detailBack">‹ 店舗一覧へ戻る</button><div class="detail-head"><div><h1 class="detail-title">'+esc(store.name)+'</h1><div class="meta">コード '+esc(store.code||"—")+'</div><div class="meta">'+esc(store.address||"住所未登録")+'</div>'+ (store.editing?'<div class="editing-badge">編集中 · 最終保存：'+esc(store.editingUpdatedAt||"")+' · '+esc(store.editingBy||"現場ユーザー")+"</div>":"")+
     (store.phone?'<div class="meta">☎ '+esc(store.phone)+'</div>':"")+'</div><button class="star '+(store.favorite?"on":"")+'" id="detailFavorite">'+(store.favorite?"★":"☆")+'</button></div>'+
