@@ -63,7 +63,7 @@ function seedData() {
     }
   ];
   state.stores = state.stores.map(normalizeStore);
-  // TEST_DATA_PLACEHOLDER
+  if (Array.isArray(window.NIWASAKI_TEST_STORES)) state.stores = [...state.stores, ...window.NIWASAKI_TEST_STORES.map(normalizeStore).filter(x => !state.stores.some(s => s.id === x.id))];
   state.courses = [{id:"test-course-1",name:"三郷汎用2コース",description:"旧庭先資料をもとにしたテスト用コース。",storeIds:["test-wise-west","test-wise-westchiba","test-wise-inage","test-wise-makuhari","test-wise-kasumi"]}];
   state.manuals = [{
     id:"test-manual-leoc",name:"レオック ドライバーマニュアル（テスト）",version:"2023-08-01",
