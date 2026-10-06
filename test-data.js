@@ -1,4 +1,4 @@
-window.NIWASAKI_TEST_STORES = [
+export const NIWASAKI_TEST_STORES = [
   {id:"import-754",name:"754 上野広小路店",code:"754",address:"東京都台東区上野2-3-4",course:"",notes:"19:00～20:00記載／19:15以降開始記載。2版の差異は要確認。",source:"★【最新】754上野広小路 ドロップ納品.xlsx"},
   {id:"import-71",name:"71 流山店",code:"71",address:"千葉県流山市加1-1572",notes:"深夜可能記載。住宅兼歯科のため騒音注意。",source:"71流山.xls"},
   {id:"import-75",name:"75 浦和花月店",code:"75",address:"埼玉県さいたま市緑区原山3-21-15",notes:"閉店22時。住宅が近いため深夜・早朝不可。",source:"75 浦和花月.xlsx"},
