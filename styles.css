@@ -62,3 +62,14 @@
   .page-head{margin:0!important}
   a{color:inherit!important;text-decoration:none!important}
 }
+
+/* Stage 1-2 UX */
+.stage-sticky-save{position:fixed;left:220px;right:0;bottom:0;z-index:28;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 24px;background:rgba(255,255,255,.96);border-top:1px solid var(--line);box-shadow:0 -4px 18px rgba(0,0,0,.06);backdrop-filter:blur(12px)}
+.stage-sticky-save>span{color:var(--muted);font-size:14px}.stage-sticky-save>div{display:flex;gap:8px}
+.stage-course-editor{max-width:920px;margin:auto}.stage-course-editor .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.stage-course-stores{display:grid;gap:9px}.stage-course-store{display:grid;grid-template-columns:30px 34px 1fr auto auto auto;gap:8px;align-items:center;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:12px}
+.stage-course-store.drag-over{border-color:#888;box-shadow:0 0 0 2px #eee inset}.stage-course-store.dragging{opacity:.5}.stage-course-store strong{text-align:center;color:#666}.stage-course-store b,.stage-course-store small{display:block}.stage-course-store small{color:var(--muted);font-size:12px}.stage-drag{color:#999;font-size:22px;cursor:grab}
+.stage-available-stores{display:grid;gap:8px}.stage-add-store{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:#fff;text-align:left}.stage-add-store>span:first-child{font-size:22px}.stage-add-store b,.stage-add-store small{display:block}.stage-add-store small{color:var(--muted);font-size:12px}
+#stageNewCourse{margin-bottom:12px}
+@media(max-width:800px){.stage-sticky-save{left:0;right:0;padding:8px 12px;gap:8px}.stage-sticky-save>span{display:none}.stage-sticky-save .button{padding:9px 10px;font-size:13px}.stage-course-editor .page-head{display:block}.stage-course-store{grid-template-columns:26px 28px 1fr auto auto}.stage-course-store .stage-remove{grid-column:3/-1;justify-self:start}.stage-course-store .stage-up,.stage-course-store .stage-down{padding:8px 10px}}
+@media print{.stage-sticky-save{display:none!important}}
