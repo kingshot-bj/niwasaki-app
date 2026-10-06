@@ -26,3 +26,5 @@
 @media(max-width:600px){.archive-row{align-items:flex-start;flex-direction:column}.archive-actions{width:100%}.archive-actions .button{flex:1}}
 
 .editing-badge{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 10px;border:1px solid #d8d8d5;border-radius:999px;background:#f7f7f5;color:#555;font-size:13px;font-weight:650}.hidden-field{display:none}.photo-upload label{display:grid;gap:6px;font-size:14px;font-weight:650}.photo-upload select{min-height:44px;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;background:#fff;font-size:16px}.photo-upload input{box-sizing:border-box}@media(max-width:600px){.editing-badge{font-size:12px}.form-actions{flex-direction:column}.form-actions .button{width:100%}}
+
+.inline-photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.inline-photos figure{margin:0}.inline-photos img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;background:#f5f5f5}.inline-photos figcaption{font-size:12px;color:#666;margin-top:4px}@media(max-width:600px){.inline-photos{grid-template-columns:1fr 1fr}}
