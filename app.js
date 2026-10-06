@@ -269,14 +269,19 @@ function photoGallery(store, editable=false) {
   const cards = photos.length ? photos.map((p, i) =>
     '<article class="photo-card">' +
       '<img src="' + esc(p.dataUrl || p.url || "") + '" alt="' + esc(p.caption || p.category || "店舗写真") + '">' +
-      '<div class="photo-meta"><strong>' + esc(p.category || "写真") + '</strong>' +
-      (p.caption ? '<span>' + esc(p.caption) + '</span>' : '') +
+      '<div class="photo-meta">' +
+      (editable ? '<label class="photo-edit-label">項目名<select class="photo-edit-category" data-photo-id="' + esc(p.id) + '">' +
+        ['搬入口','駐車場所','納品場所','車両進入経路','鍵・警備','空ケース等の置き場所','時間制限','注意事項','作業手順','店舗情報','その他'].map(cat => '<option value="'+esc(cat)+'" '+(p.category===cat?'selected':'')+'>'+esc(cat)+'</option>').join("") +
+        '</select></label><label class="photo-edit-label">説明<input class="photo-edit-caption" data-photo-id="' + esc(p.id) + '" value="' + esc(p.caption || "") + '" placeholder="写真の説明"></label>' :
+        '<strong>' + esc(p.category || "写真") + '</strong>' + (p.caption ? '<span>' + esc(p.caption) + '</span>' : '')) +
       (p.capturedAt ? '<small>' + esc(p.capturedAt) + '</small>' : '') +
       (editable ? '<button type="button" class="button secondary photo-remove" data-photo-index="' + i + '">削除</button>' : '') +
       '</div></article>'
   ).join("") : empty("写真はまだありません","現場写真・搬入口・駐車位置・納品場所などを追加できます。");
   return '<div class="photo-grid">' + cards + '</div>';
 }
+
+function bindPhotoMetaEdit(store) {const saveField=(selector,key)=>document.querySelectorAll(selector).forEach(el=>el.oninput=()=>{const p=store.photos.find(x=>x.id===el.dataset.photoId);if(p){p[key]=el.value;save();}});saveField(".photo-edit-category","category");saveField(".photo-edit-caption","caption");}
 
 function bindPhotoRemove(store) {
   document.querySelectorAll(".photo-remove").forEach(button => {
@@ -428,6 +433,7 @@ function edit(id) {
   $("saveDraftButton").onclick=()=>{markEditing(); state.selectedId=store.id; state.route="detail"; render();};
   $("addCustomField").onclick=() => { addCustomField(store); renderCustomFieldEditor(store); };
   bindCustomFields(store);
+  bindPhotoMetaEdit(store);
   bindPhotoRemove(store);
   const photoCategory = $("photoCategory");
   const photoOtherWrap = $("photoOtherWrap");
@@ -446,6 +452,7 @@ function edit(id) {
       $("photoCaption").value = "";
       $("photoOtherCategory").value = "";
       $("editPhotos").innerHTML = photoGallery(store,true);
+      bindPhotoMetaEdit(store);
       bindPhotoRemove(store);
     } catch (error) {
       alert("写真を追加できませんでした。");
