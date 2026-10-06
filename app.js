@@ -228,8 +228,7 @@ function detail() {
   const allRows=rows.concat(customRows);
   const info=allRows.length?allRows.map(x=>'<div class="info-row"><b>'+x[0]+'</b><span>'+esc(x[1])+'</span></div>').join(""):empty("配送情報がありません");
   const procedure=Array.isArray(store.procedure)&&store.procedure.length?'<section class="section"><div class="section-head"><h2>作業手順</h2></div><ol class="procedure">'+store.procedure.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ol></section>':"";
-  $("app").innerHTML='<div class="detail"><button class="back" id="detailBack">‹ 店舗一覧へ戻る</button><div class="detail-head"><div><h1 class="detail-title">'+esc(store.name)+'</h1><div class="meta">コード '+esc(store.code||"—")+'</div><div class="meta">'+esc(store.address||"住所未登録")+'</div>
-    (store.editing?'<div class="editing-badge">編集中 · 最終保存：'+esc(store.editingUpdatedAt||"")+' · '+esc(store.editingBy||"現場ユーザー")+"</div>":"") +'+
+  $("app").innerHTML='<div class="detail"><button class="back" id="detailBack">‹ 店舗一覧へ戻る</button><div class="detail-head"><div><h1 class="detail-title">'+esc(store.name)+'</h1><div class="meta">コード '+esc(store.code||"—")+'</div><div class="meta">'+esc(store.address||"住所未登録")+'</div>(store.editing?'<div class="editing-badge">編集中 · 最終保存：'+esc(store.editingUpdatedAt||"")+' · '+esc(store.editingBy||"現場ユーザー")+"</div>":"")+
     (store.phone?'<div class="meta">☎ '+esc(store.phone)+'</div>':"")+'</div><button class="star '+(store.favorite?"on":"")+'" id="detailFavorite">'+(store.favorite?"★":"☆")+'</button></div>'+
     '<div class="actions"><button class="button secondary" id="mapButton">⌖ 地図を見る</button><button class="button primary" id="editButton">情報を変更</button><button class="button danger" id="archiveButton">アーカイブ</button></div>'+
     '<div class="tabs"><button class="tab active" id="infoTab">配送情報</button><button class="tab" id="procedureTab">作業手順</button><button class="tab" id="photoTab">写真</button><button class="tab" id="sourceTab">出典</button></div>'+
