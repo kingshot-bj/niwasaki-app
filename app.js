@@ -78,6 +78,7 @@ function load() {
     const value = JSON.parse(localStorage.getItem(KEY) || "null");
     if (value && Array.isArray(value.stores)) {
       state.stores = value.stores.map(normalizeStore);
+      if (Array.isArray(window.NIWASAKI_TEST_STORES)) state.stores = [...state.stores, ...window.NIWASAKI_TEST_STORES.map(normalizeStore).filter(x => !state.stores.some(s => s.id === x.id))];
       state.courses = Array.isArray(value.courses) ? value.courses : [];
       state.manuals = Array.isArray(value.manuals) ? value.manuals : [];
       save();
