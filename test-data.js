@@ -1,0 +1,20 @@
+window.NIWASAKI_TEST_STORES = [
+  {id:"import-754",name:"754 上野広小路店",code:"754",address:"東京都台東区上野2-3-4",course:"",notes:"19:00～20:00記載／19:15以降開始記載。2版の差異は要確認。",source:"★【最新】754上野広小路 ドロップ納品.xlsx"},
+  {id:"import-71",name:"71 流山店",code:"71",address:"千葉県流山市加1-1572",notes:"深夜可能記載。住宅兼歯科のため騒音注意。",source:"71流山.xls"},
+  {id:"import-75",name:"75 浦和花月店",code:"75",address:"埼玉県さいたま市緑区原山3-21-15",notes:"閉店22時。住宅が近いため深夜・早朝不可。",source:"75 浦和花月.xlsx"},
+  {id:"import-78",name:"78 東川口店",code:"78",address:"埼玉県川口市戸塚5-18-1",notes:"荷物用EVは人不可、耐荷重300kg、カゴ車1台ずつ。",source:"78 東川口.xlsx"},
+  {id:"import-98",name:"98 川間店",code:"98",address:"千葉県野田市岩名2-6-1",notes:"2:00～6:00と23時までの記載があり要確認。",source:"98川間店.xlsx"},
+  {id:"import-618",name:"618 葛西店",code:"618",address:"東京都江戸川区中葛西5-40-15",notes:"23:30までに納品完了。騒音注意。",source:"618葛西店20230120.xlsx"},
+  {id:"import-635",name:"635 花栗店",code:"635",address:"埼玉県草加市1-18-2",notes:"冷蔵庫別納品。搬入口の路面・通路商品に注意。",source:"5BD73EC6.tmp"},
+  {id:"import-679",name:"679 綾瀬店",code:"679",address:"東京都葛飾区小菅4-21-11 エレガンス綾瀬5 1階",notes:"8:00オンタイム。待機禁止、通学路、傾斜に注意。",source:"【最新】679綾瀬.xls"},
+  {id:"import-614",name:"614 戸田店",code:"614",address:"埼玉県戸田市大字新曽1900",notes:"納品時間制限なしとの記載。",source:"【最新26.02.20より】614戸田.xls"},
+  {id:"import-762",name:"762 東中野店",code:"762",address:"東京都中野区東中野3-20-10",course:"GS 9",notes:"21:05（店舗カルテ）と21:01（コース指示書）の差異あり。",source:"【GS】9コース.xls"},
+  {id:"import-5516",name:"5516 プレミアムカルビ新小岩店",code:"5516",address:"東京都江戸川区松島3-40-11",course:"GS 9",notes:"無人納品。24時の記載。近隣騒音注意。",source:"【GS】9コース.xls"},
+  {id:"import-775",name:"775 新小岩店",code:"775",address:"東京都葛飾区西新小岩1-8-1",course:"GS 9",notes:"3t/4tで駐車位置が異なる。騒音注意。",source:"【GS】9コース.xls"},
+  {id:"import-721",name:"721 王子店",code:"721",address:"東京都北区豊島8-15-26",course:"GS 10",notes:"20:00店員待機。遅れる場合は連絡。",source:"【GS】10コース.xlsx"},
+  {id:"import-2013",name:"2013 町屋店",code:"2013",address:"東京都荒川区荒川5丁目14-1",course:"GS 10",notes:"20:30店員待機。搬入口で引渡し。",source:"【GS】10コース.xlsx"},
+  {id:"import-607",name:"607 鹿骨店",code:"607",address:"東京都江戸川区鹿骨4-26-16",course:"GS 10",notes:"冷蔵庫納品。マンション前のため騒音注意。",source:"【GS】10コース.xlsx"},
+  {id:"import-711",name:"711 榎店",code:"711",address:"東京都新宿区東榎町10-3",course:"GS 15",notes:"20:00まで。必ず店員へ声掛け。",source:"【GS】15コース.xlsx"},
+  {id:"import-707",name:"707 立石店",code:"707",address:"東京都葛飾区立石5丁目6番3号",course:"GS 15",notes:"23:00まで。遅い時間は近隣クレーム。",source:"【GS】15コース.xlsx"},
+  {id:"import-617",name:"617 亀有店",code:"617",address:"東京都葛飾区亀有3-32-20",course:"GS 15",notes:"5:00まで。騒音クレーム履歴あり。",source:"【GS】15コース.xlsx"}
+];
