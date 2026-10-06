@@ -343,6 +343,8 @@ function addCustomField(store, label = "", value = "") {
   });
 }
 
+function procedureEditor(store){return "<section class=\"form-card\"><div class=\"section-head\"><h2>作業手順</h2><button class=\"button secondary\" type=\"button\" id=\"addProcedure\">＋ 手順を追加</button></div><div id=\"procedureEditor\"></div></section>";}
+function bindProcedureEditor(store){const wrap=$("procedureEditor");if(!wrap)return;wrap.innerHTML=(store.procedure||[]).map((x,i)=>"<div class=\"procedure-edit-row\" data-i=\""+i+"\"><span>"+(i+1)+"</span><textarea class=\"procedure-input\" rows=\"1\">"+esc(x)+"</textarea><button type=\"button\" class=\"button secondary procedure-remove\">削除</button></div>").join("")||"<div class=\"empty\">作業手順はありません</div>";wrap.querySelectorAll(".procedure-input").forEach(input=>{input.oninput=()=>{store.procedure[Number(input.closest("[data-i]").dataset.i)]=input.value;input.style.height="auto";input.style.height=Math.max(input.scrollHeight,46)+"px"};input.oninput()});wrap.querySelectorAll(".procedure-remove").forEach(b=>b.onclick=()=>{store.procedure.splice(Number(b.closest("[data-i]").dataset.i),1);bindProcedureEditor(store)});}
 function customFieldEditor(store) {
   store.customFields = Array.isArray(store.customFields) ? store.customFields : [];
   const rows = store.customFields.map((item, index) =>
@@ -405,7 +407,7 @@ function edit(id) {
   $("app").innerHTML='<div class="detail"><button class="back" id="cancelEdit">‹ 戻る</button><div class="page-head"><h1 class="page-title">'+(isNew?"店舗を登録":"情報を変更")+'</h1></div><form id="storeForm">'+
     '<section class="form-card"><h2>基本情報</h2><div class="form-grid">'+field("name","店舗名",store)+field("code","店舗コード",store)+field("address","住所",store)+field("phone","電話番号",store)+field("course","コース",store)+'</div></section>'+
     '<section class="form-card"><h2>配送情報</h2><div class="form-grid">'+field("deliveryPlace","納品場所",store)+field("entrance","搬入口",store)+field("parking","駐車場所",store)+field("vehicleRoute","車両進入経路",store)+field("security","鍵・警備",store)+field("emptyCases","空ケース等の置き場所",store)+field("timeRestriction","時間制限",store)+field("notes","注意事項",store,true)+'</div></section>'+
-    '<section class="form-card"><div class="section-head"><h2>写真</h2></div><div class="photo-upload"><label>項目名<select id="photoCategory"><option value="搬入口">搬入口</option><option value="駐車場所">駐車場所</option><option value="納品場所">納品場所</option><option value="車両進入経路">車両進入経路</option><option value="鍵・警備">鍵・警備</option><option value="空ケース等の置き場所">空ケース等の置き場所</option><option value="時間制限">時間制限</option><option value="注意事項">注意事項</option><option value="作業手順">作業手順</option><option value="店舗情報">店舗情報</option><option value="その他">その他</option></select></label><label id="photoOtherWrap" class="hidden-field">その他の項目名<input id="photoOtherCategory" placeholder="項目名を入力"></label><label>写真<input id="photoInput" type="file" accept="image/*" multiple></label><label>説明<input id="photoCaption" placeholder="写真の説明"></label><button class="button secondary" type="button" id="photoAddButton">写真を追加</button></div><div id="editPhotos">' + photoGallery(store,true) + '</div></section>'+
+    'procedureEditor(store)+'<section class="form-card"><div class="section-head"><h2>写真</h2></div><div class="photo-upload"><label>項目名<select id="photoCategory"><option value="搬入口">搬入口</option><option value="駐車場所">駐車場所</option><option value="納品場所">納品場所</option><option value="車両進入経路">車両進入経路</option><option value="鍵・警備">鍵・警備</option><option value="空ケース等の置き場所">空ケース等の置き場所</option><option value="時間制限">時間制限</option><option value="注意事項">注意事項</option><option value="作業手順">作業手順</option><option value="店舗情報">店舗情報</option><option value="その他">その他</option></select></label><label id="photoOtherWrap" class="hidden-field">その他の項目名<input id="photoOtherCategory" placeholder="項目名を入力"></label><label>写真<input id="photoInput" type="file" accept="image/*" multiple></label><label>説明<input id="photoCaption" placeholder="写真の説明"></label><button class="button secondary" type="button" id="photoAddButton">写真を追加</button></div><div id="editPhotos">' + photoGallery(store,true) + '</div></section>'+
     customFieldEditor(store)+
     '<div class="form-actions"><button class="button secondary" type="button" id="cancelButton">戻る</button><button class="button secondary" type="button" id="saveDraftButton">編集中として保存</button><button class="button primary" type="submit">保存して終了</button></div></form></div>';
   const cancel=()=>{if(isNew&&!store.editing){state.stores=state.stores.filter(x=>x.id!==store.id);save();return navigate("search");}save();state.selectedId=store.id;state.route="detail";render();};
@@ -418,7 +420,7 @@ function edit(id) {
     input.addEventListener("input", grow);
     grow();
   });
-  const markEditing=()=>{store.editing=true; store.editingStartedAt=store.editingStartedAt||now(); store.editingUpdatedAt=now(); store.editingBy="現場ユーザー"; store.updatedAt=store.editingUpdatedAt; save();};
+  bindProcedureEditor(store);\n  $("addProcedure").onclick=()=>{store.procedure=Array.isArray(store.procedure)?store.procedure:[];store.procedure.push("");bindProcedureEditor(store)};\n  const markEditing=()=>{store.editing=true; store.editingStartedAt=store.editingStartedAt||now(); store.editingUpdatedAt=now(); store.editingBy="現場ユーザー"; store.updatedAt=store.editingUpdatedAt; save();};
   $("saveDraftButton").onclick=()=>{markEditing(); state.selectedId=store.id; state.route="detail"; render();};
   $("addCustomField").onclick=() => { addCustomField(store); renderCustomFieldEditor(store); };
   bindCustomFields(store);
@@ -447,7 +449,7 @@ function edit(id) {
     }
   };
   $("storeForm").onsubmit=(event)=>{event.preventDefault();
-    ["name","code","address","phone","course","deliveryPlace","entrance","parking","vehicleRoute","security","emptyCases","timeRestriction","notes"].forEach(k=>store[k]=$("field_"+k).value.trim());
+    ["name","code","address","phone","course","deliveryPlace","entrance","parking","vehicleRoute","security","emptyCases","timeRestriction","notes"].forEach(k=>store[k]=$("field_"+k).value.trim());\n    store.procedure=Array.isArray(store.procedure)?store.procedure.map(x=>String(x||"").trim()).filter(Boolean):[];
     const changedAt=now();
     store.updatedAt=changedAt;
     store.editing=true;
