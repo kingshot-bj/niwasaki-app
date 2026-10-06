@@ -245,7 +245,8 @@ function detail() {
     '<div class="info" id="detailContent">'+info+procedure+'</div></div>';
   $("detailBack").onclick=()=>navigate("search"); $("editButton").onclick=()=>edit(store.id);
   $("archiveButton").onclick=()=>{
-    if(!confirm("「"+store.name+"」をアーカイブしますか？\n通常の店舗一覧から非表示になります。")) return;
+    if(!confirm("「"+store.name+"」をアーカイブしますか？
+通常の店舗一覧から非表示になります。")) return;
     store.archivedAt=now(); store.archiveReason="店舗管理からアーカイブ"; store.updatedAt=now();
     store.history=Array.isArray(store.history)?store.history:[];
     store.history.push({id:uid("h"),date:now(),title:"店舗アーカイブ",summary:"通常一覧からアーカイブ",editor:"管理",status:"approved"});
@@ -421,7 +422,9 @@ function edit(id) {
     input.addEventListener("input", grow);
     grow();
   });
-  bindProcedureEditor(store);\n  $("addProcedure").onclick=()=>{store.procedure=Array.isArray(store.procedure)?store.procedure:[];store.procedure.push("");bindProcedureEditor(store)};\n  const markEditing=()=>{store.editing=true; store.editingStartedAt=store.editingStartedAt||now(); store.editingUpdatedAt=now(); store.editingBy="現場ユーザー"; store.updatedAt=store.editingUpdatedAt; save();};
+  bindProcedureEditor(store);
+  $("addProcedure").onclick=()=>{store.procedure=Array.isArray(store.procedure)?store.procedure:[];store.procedure.push("");bindProcedureEditor(store)};
+  const markEditing=()=>{store.editing=true; store.editingStartedAt=store.editingStartedAt||now(); store.editingUpdatedAt=now(); store.editingBy="現場ユーザー"; store.updatedAt=store.editingUpdatedAt; save();};
   $("saveDraftButton").onclick=()=>{markEditing(); state.selectedId=store.id; state.route="detail"; render();};
   $("addCustomField").onclick=() => { addCustomField(store); renderCustomFieldEditor(store); };
   bindCustomFields(store);
@@ -450,7 +453,9 @@ function edit(id) {
     }
   };
   $("storeForm").onsubmit=(event)=>{event.preventDefault();
-    ["name","code","address","phone","course","deliveryPlace","entrance","parking","vehicleRoute","security","emptyCases","timeRestriction","notes"].forEach(k=>store[k]=$("field_"+k).value.trim());\n    store.procedure=Array.isArray(store.procedure)?store.procedure.map(x=>String(x||"").trim()).filter(Boolean):[];
+    ["name","code","address","phone","course","deliveryPlace","entrance","parking","vehicleRoute","security","emptyCases","timeRestriction","notes"].forEach(k=>store[k]=$("field_"+k).value.trim());
+    store.status=$("field_status").value||store.status||"通常";
+    store.procedure=Array.isArray(store.procedure)?store.procedure.map(x=>String(x||"").trim()).filter(Boolean):[];
     const changedAt=now();
     store.updatedAt=changedAt;
     store.editing=true;
@@ -486,7 +491,8 @@ function archivePage() {
     button.onclick=()=>{
       const store=state.stores.find(x=>x.id===button.dataset.deleteId);
       if(!store)return;
-      if(!confirm("「"+store.name+"」を完全に削除しますか？\nこの操作は元に戻せません。"))return;
+      if(!confirm("「"+store.name+"」を完全に削除しますか？
+この操作は元に戻せません。"))return;
       state.stores=state.stores.filter(x=>x.id!==store.id);
       state.courses=state.courses.map(c=>Object.assign({},c,{storeIds:c.storeIds.filter(id=>id!==store.id)}));
       save(); archivePage();
