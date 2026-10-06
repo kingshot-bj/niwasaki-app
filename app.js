@@ -366,8 +366,8 @@ function procedureEditor(store) {
   const rows = store.procedure.map((item, index) =>
     '<div class="procedure-edit-row" data-procedure-index="' + index + '">' +
       '<span class="procedure-number">' + (index + 1) + '</span>' +
-      '<textarea class="procedure-input" rows="1" placeholder="作業手順を入力">' + esc(item || "") + '</textarea>' +
-      '<button class="button secondary procedure-remove" type="button">削除</button>' +
+      '<textarea class="procedure-input" rows="1" data-procedure-index="' + index + '" placeholder="作業手順を入力">' + esc(item || "") + '</textarea>' +
+      '<button class="button secondary procedure-remove" type="button" data-procedure-index="' + index + '">削除</button>' +
     '</div>'
   ).join("");
   return '<section class="form-card"><div class="section-head"><h2>作業手順</h2>' +
@@ -378,25 +378,57 @@ function procedureEditor(store) {
 function bindProcedureEditor(store) {
   const wrap = $("procedureEditor");
   if (!wrap) return;
-  wrap.querySelectorAll(".procedure-input").forEach(input => {
+  const inputs = wrap.querySelectorAll(".procedure-input");
+  inputs.forEach(input => {
     const grow = () => {
       input.style.height = "auto";
       input.style.height = Math.max(input.scrollHeight, 46) + "px";
     };
     input.oninput = () => {
-      const row = input.closest(".procedure-edit-row");
-      store.procedure[Number(row.dataset.procedureIndex)] = input.value;
+      const index = Number(input.dataset.procedureIndex);
+      if (!Number.isNaN(index)) {
+        store.procedure[index] = input.value;
+        store.editing = true;
+        store.editingUpdatedAt = now();
+        store.updatedAt = store.editingUpdatedAt;
+        save();
+      }
       grow();
     };
     grow();
   });
   wrap.querySelectorAll(".procedure-remove").forEach(button => {
     button.onclick = () => {
-      const row = button.closest(".procedure-edit-row");
-      store.procedure.splice(Number(row.dataset.procedureIndex), 1);
-      bindProcedureEditor(store);
+      const index = Number(button.dataset.procedureIndex);
+      if (Number.isNaN(index)) return;
+      store.procedure.splice(index, 1);
+      store.editing = true;
+      store.editingUpdatedAt = now();
+      store.updatedAt = store.editingUpdatedAt;
+      save();
+      renderProcedureEditor(store);
     };
   });
+}
+
+function renderProcedureEditor(store) {
+  const wrap = $("procedureEditor");
+  if (!wrap) return;
+  const scrollTop = wrap.scrollTop;
+  wrap.outerHTML = '<div id="procedureEditor">' + (
+    store.procedure.length
+      ? store.procedure.map((item, index) =>
+          '<div class="procedure-edit-row" data-procedure-index="' + index + '">' +
+            '<span class="procedure-number">' + (index + 1) + '</span>' +
+            '<textarea class="procedure-input" rows="1" data-procedure-index="' + index + '" placeholder="作業手順を入力">' + esc(item || "") + '</textarea>' +
+            '<button class="button secondary procedure-remove" type="button" data-procedure-index="' + index + '">削除</button>' +
+          '</div>'
+        ).join("")
+      : '<div class="empty">作業手順はありません</div>'
+  ) + '</div>';
+  bindProcedureEditor(store);
+  const next = $("procedureEditor");
+  if (next) next.scrollTop = scrollTop;
 }
 
 function customFieldEditor(store) {
@@ -477,7 +509,20 @@ function edit(id) {
   });
   $("field_status").value=store.status||"通常";
   bindProcedureEditor(store);
-  $("addProcedure").onclick=()=>{store.procedure=Array.isArray(store.procedure)?store.procedure:[];store.procedure.push("");bindProcedureEditor(store);};
+  $("addProcedure").onclick=()=>{
+    store.procedure=Array.isArray(store.procedure)?store.procedure:[];
+    store.procedure.push("");
+    store.editing=true;
+    store.editingStartedAt=store.editingStartedAt||now();
+    store.editingUpdatedAt=now();
+    store.editingBy=store.editingBy||"現場ユーザー";
+    store.updatedAt=store.editingUpdatedAt;
+    save();
+    renderProcedureEditor(store);
+    const inputs=document.querySelectorAll(".procedure-input");
+    const last=inputs[inputs.length-1];
+    if(last){last.focus();last.setSelectionRange(last.value.length,last.value.length);}
+  };
   const markEditing=()=>{store.editing=true; store.editingStartedAt=store.editingStartedAt||now(); store.editingUpdatedAt=now(); store.editingBy="現場ユーザー"; store.updatedAt=store.editingUpdatedAt; save();};
   $("saveDraftButton").onclick=()=>{markEditing(); state.selectedId=store.id; state.route="detail"; render();};
   $("addCustomField").onclick=() => { addCustomField(store); renderCustomFieldEditor(store); };
