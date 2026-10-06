@@ -215,18 +215,83 @@ function detail() {
   $("app").innerHTML='<div class="detail"><button class="back" id="detailBack">‹ 店舗一覧へ戻る</button><div class="detail-head"><div><h1 class="detail-title">'+esc(store.name)+'</h1><div class="meta">コード '+esc(store.code||"—")+'</div><div class="meta">'+esc(store.address||"住所未登録")+'</div>'+
     (store.phone?'<div class="meta">☎ '+esc(store.phone)+'</div>':"")+'</div><button class="star '+(store.favorite?"on":"")+'" id="detailFavorite">'+(store.favorite?"★":"☆")+'</button></div>'+
     '<div class="actions"><button class="button secondary" id="mapButton">⌖ 地図を見る</button><button class="button primary" id="editButton">情報を変更</button></div>'+
-    '<div class="tabs"><button class="tab active" id="infoTab">配送情報</button><button class="tab" id="procedureTab">作業手順</button><button class="tab" id="sourceTab">出典</button></div>'+
+    '<div class="tabs"><button class="tab active" id="infoTab">配送情報</button><button class="tab" id="procedureTab">作業手順</button><button class="tab" id="photoTab">写真</button><button class="tab" id="sourceTab">出典</button></div>'+
     '<div class="info" id="detailContent">'+info+procedure+'</div></div>';
   $("detailBack").onclick=()=>navigate("search"); $("editButton").onclick=()=>edit(store.id);
   $("detailFavorite").onclick=()=>{store.favorite=!store.favorite;save();render();};
   $("mapButton").onclick=()=>{if(store.address&&store.address!=="（テストデータ）")window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(store.address),"_blank");};
   $("infoTab").onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));$("infoTab").classList.add("active");$("detailContent").innerHTML=info+procedure;};
   $("procedureTab").onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));$("procedureTab").classList.add("active");$("detailContent").innerHTML=procedure||empty("作業手順がありません");};
+  $("photoTab").onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));$("photoTab").classList.add("active"); $("detailContent").innerHTML=photoGallery(store,false);};
   $("sourceTab").onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));$("sourceTab").classList.add("active");
     const sources=store.sources.length?store.sources.map(x=>'<div class="info-row"><b>'+esc(x.type||"資料")+'</b><span>'+esc(x.name||"名称未設定")+'</span></div>').join(""):empty("出典がありません");
     const history=store.history.length?'<section class="section"><div class="section-head"><h2>更新履歴</h2></div><div class="info">'+store.history.slice().reverse().map(h=>'<div class="info-row"><b>'+esc(h.title||"更新")+'</b><span>'+esc(h.date||"")+'<br>'+esc(h.summary||"")+'<br>編集：'+esc(h.editor||"")+'</span></div>').join("")+'</div></section>':"";
     $("detailContent").innerHTML=sources+history;
   };
+}
+
+function photoGallery(store, editable=false) {
+  const photos = Array.isArray(store.photos) ? store.photos.filter(p => !p.deletedAt) : [];
+  const cards = photos.length ? photos.map((p, i) =>
+    '<article class="photo-card">' +
+      '<img src="' + esc(p.dataUrl || p.url || "") + '" alt="' + esc(p.caption || p.category || "店舗写真") + '">' +
+      '<div class="photo-meta"><strong>' + esc(p.category || "写真") + '</strong>' +
+      (p.caption ? '<span>' + esc(p.caption) + '</span>' : '') +
+      (p.capturedAt ? '<small>' + esc(p.capturedAt) + '</small>' : '') +
+      (editable ? '<button type="button" class="button secondary photo-remove" data-photo-index="' + i + '">削除</button>' : '') +
+      '</div></article>'
+  ).join("") : empty("写真はまだありません","現場写真・搬入口・駐車位置・納品場所などを追加できます。");
+  return '<div class="photo-grid">' + cards + '</div>';
+}
+
+function bindPhotoRemove(store) {
+  document.querySelectorAll(".photo-remove").forEach(button => {
+    button.onclick = () => {
+      const index = Number(button.dataset.photoIndex);
+      if (!Number.isInteger(index)) return;
+      const active = store.photos.filter(p => !p.deletedAt);
+      const target = active[index];
+      if (target) target.deletedAt = now();
+      save();
+      render();
+    };
+  });
+}
+
+function resizePhoto(file, maxSize=1400, quality=0.78) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function addPhotoFromFile(store, file, category, caption) {
+  return resizePhoto(file).then(dataUrl => {
+    store.photos = Array.isArray(store.photos) ? store.photos : [];
+    store.photos.push({
+      id: uid("photo"),
+      dataUrl,
+      category: category || "現場写真",
+      caption: caption || "",
+      capturedAt: new Date().toISOString().slice(0,10),
+      uploadedBy: "実機テスト"
+    });
+    save();
+  });
 }
 
 function field(key,label,store,full) {
@@ -307,12 +372,31 @@ function edit(id) {
   $("app").innerHTML='<div class="detail"><button class="back" id="cancelEdit">‹ 戻る</button><div class="page-head"><h1 class="page-title">'+(isNew?"店舗を登録":"情報を変更")+'</h1></div><form id="storeForm">'+
     '<section class="form-card"><h2>基本情報</h2><div class="form-grid">'+field("name","店舗名",store)+field("code","店舗コード",store)+field("address","住所",store)+field("phone","電話番号",store)+field("course","コース",store)+'</div></section>'+
     '<section class="form-card"><h2>配送情報</h2><div class="form-grid">'+field("deliveryPlace","納品場所",store)+field("entrance","搬入口",store)+field("parking","駐車場所",store)+field("vehicleRoute","車両進入経路",store)+field("security","鍵・警備",store)+field("emptyCases","空ケース等の置き場所",store)+field("timeRestriction","時間制限",store)+field("notes","注意事項",store,true)+'</div></section>'+
-    customFieldEditor(store)+
+    '<section class="form-card"><div class="section-head"><h2>写真</h2></div><div class="photo-upload"><input id="photoInput" type="file" accept="image/*" multiple><input id="photoCategory" placeholder="分類（例：搬入口・駐車場所）"><input id="photoCaption" placeholder="写真の説明"><button class="button secondary" type="button" id="photoAddButton">写真を追加</button></div><div id="editPhotos">' + photoGallery(store,true) + '</div></section>'+
+false
     '<div class="form-actions"><button class="button secondary" type="button" id="cancelButton">キャンセル</button><button class="button primary" type="submit">保存する</button></div></form></div>';
   const cancel=()=>{if(isNew){state.stores=state.stores.filter(x=>x.id!==store.id);save();}navigate("search");};
   $("cancelEdit").onclick=cancel; $("cancelButton").onclick=cancel;
   $("addCustomField").onclick=() => { addCustomField(store); renderCustomFieldEditor(store); };
   bindCustomFields(store);
+  bindPhotoRemove(store);
+  $("photoAddButton").onclick = async () => {
+    const input = $("photoInput");
+    const files = Array.from(input.files || []);
+    if (!files.length) return;
+    const category = $("photoCategory").value.trim() || "現場写真";
+    const caption = $("photoCaption").value.trim();
+    try {
+      for (const file of files) await addPhotoFromFile(store, file, category, caption);
+      $("photoInput").value = "";
+      $("photoCaption").value = "";
+      $("editPhotos").innerHTML = photoGallery(store,true);
+      bindPhotoRemove(store);
+    } catch (error) {
+      alert("写真を追加できませんでした。");
+      console.error(error);
+    }
+  };
   $("storeForm").onsubmit=(event)=>{event.preventDefault();
     ["name","code","address","phone","course","deliveryPlace","entrance","parking","vehicleRoute","security","emptyCases","timeRestriction","notes"].forEach(k=>store[k]=$("field_"+k).value.trim());
     const changedAt=now();
