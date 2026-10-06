@@ -63,7 +63,7 @@ function seedData() {
     }
   ];
   state.stores = state.stores.map(normalizeStore);
-  if (Array.isArray(window.NIWASAKI_TEST_STORES)) { const imported = window.NIWASAKI_TEST_STORES.map(normalizeStore); const importedIds = new Set(imported.map(x => x.id)); state.stores = [...state.stores.filter(x => !importedIds.has(x.id)), ...imported]; }
+  if (Array.isArray(window.NIWASAKI_TEST_STORES)) state.stores = mergeImportedStores(state.stores, window.NIWASAKI_TEST_STORES);
   state.courses = [{id:"test-course-1",name:"三郷汎用2コース",description:"旧庭先資料をもとにしたテスト用コース。",storeIds:["test-wise-west","test-wise-westchiba","test-wise-inage","test-wise-makuhari","test-wise-kasumi"]}];
   state.manuals = [{
     id:"test-manual-leoc",name:"レオック ドライバーマニュアル（テスト）",version:"2023-08-01",
@@ -78,7 +78,7 @@ function load() {
     const value = JSON.parse(localStorage.getItem(KEY) || "null");
     if (value && Array.isArray(value.stores)) {
       state.stores = value.stores.map(normalizeStore);
-      if (Array.isArray(window.NIWASAKI_TEST_STORES)) { const imported = window.NIWASAKI_TEST_STORES.map(normalizeStore); const importedIds = new Set(imported.map(x => x.id)); state.stores = [...state.stores.filter(x => !importedIds.has(x.id)), ...imported]; }
+      if (Array.isArray(window.NIWASAKI_TEST_STORES)) state.stores = mergeImportedStores(state.stores, window.NIWASAKI_TEST_STORES);
       state.courses = Array.isArray(value.courses) ? value.courses : [];
       state.manuals = Array.isArray(value.manuals) ? value.manuals : [];
       save();
@@ -101,7 +101,7 @@ function normalizeStore(store) {
     status:"通常", deliveryPlace:"", entrance:"", parking:"", vehicleRoute:"",
     security:"", emptyCases:"", timeRestriction:"", notes:"",
     procedure:[], photos:[], customFields:[], history:[], sources:[],
-    favorite:false, createdAt:now(), updatedAt:now()
+    favorite:false, archivedAt:null, archiveReason:"", createdAt:now(), updatedAt:now()
   };
   const merged = Object.assign(base, store || {});
   merged.photos = Array.isArray(merged.photos) ? merged.photos : [];
@@ -112,6 +112,22 @@ function normalizeStore(store) {
     : (merged.source ? [{name: merged.source, type:"source"}] : []);
   delete merged.source;
   return merged;
+}
+
+function mergeImportedStores(existing, importedRaw) {
+  const existingById = new Map(existing.map(store => [store.id, store]));
+  const imported = importedRaw.map(normalizeStore);
+  const importedIds = new Set(imported.map(store => store.id));
+  const mergedImported = imported.map(store => {
+    const previous = existingById.get(store.id);
+    if (!previous) return store;
+    // Imported data may refresh the record, but local archive state must survive refresh.
+    return Object.assign(store, {
+      archivedAt: previous.archivedAt || null,
+      archiveReason: previous.archiveReason || ""
+    });
+  });
+  return [...existing.filter(store => !importedIds.has(store.id)), ...mergedImported];
 }
 
 function blankStore() {
@@ -161,7 +177,7 @@ function bindStoreRows() {
 }
 
 function home() {
-  const favorites=state.stores.filter(x=>x.favorite).slice(0,3);
+  const favorites=state.stores.filter(x=>x.favorite&&!x.archivedAt).slice(0,3);
   shell("ホーム","",
     '<button class="search-box" id="homeSearch"><span>⌕</span><input readonly placeholder="店舗名・コード・住所を検索"></button>'+
     '<div class="quick-list"><button class="quick-card" id="searchQuick"><span class="left"><span class="quick-icon">⌕</span><span><strong>店舗を探す</strong><small>名前・コード・住所から</small></span></span><span class="chevron">›</span></button>'+
@@ -175,12 +191,12 @@ function home() {
 }
 
 function search() {
-  shell("店舗を探す",state.stores.length+"件",
+  shell("店舗を探す",state.stores.filter(x=>!x.archivedAt).length+"件",
     '<div class="search-box"><span>⌕</span><input id="searchInput" placeholder="店舗名・コード・住所・コースで検索"></div>'+
     '<div class="section-head"><h2>店舗一覧</h2><button class="button secondary" id="newSearch">＋ 店舗登録</button></div><div id="searchResults" class="store-list"></div>');
   const draw=()=>{
     const q=$("searchInput").value.trim().toLowerCase();
-    const stores=state.stores.filter(s=>!q||[s.name,s.code,s.address,s.course,s.notes].some(v=>String(v||"").toLowerCase().includes(q)));
+    const stores=state.stores.filter(s=>!s.archivedAt && (!q||[s.name,s.code,s.address,s.course,s.notes].some(v=>String(v||"").toLowerCase().includes(q))));
     $("searchResults").innerHTML=stores.length?stores.map(storeRow).join(""):empty("店舗が見つかりません");
     bindStoreRows();
   };
@@ -198,7 +214,7 @@ function coursesPage() {
 
 function courseDetail(id) {
   const c=state.courses.find(x=>x.id===id); if(!c)return navigate("courses");
-  const stores=c.storeIds.map(id=>state.stores.find(s=>s.id===id)).filter(Boolean);
+  const stores=c.storeIds.map(id=>state.stores.find(s=>s.id===id)).filter(s=>s&&!s.archivedAt);
   $("app").innerHTML='<button class="back" id="courseBack">‹ コース一覧へ戻る</button><div class="page-head"><h1 class="page-title">'+esc(c.name)+'</h1><p class="page-sub">'+esc(c.description)+'</p></div>'+
     '<div class="store-list">'+stores.map(storeRow).join("")+'</div>';
   $("courseBack").onclick=()=>coursesPage(); bindStoreRows();
@@ -214,10 +230,17 @@ function detail() {
   const procedure=Array.isArray(store.procedure)&&store.procedure.length?'<section class="section"><div class="section-head"><h2>作業手順</h2></div><ol class="procedure">'+store.procedure.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ol></section>':"";
   $("app").innerHTML='<div class="detail"><button class="back" id="detailBack">‹ 店舗一覧へ戻る</button><div class="detail-head"><div><h1 class="detail-title">'+esc(store.name)+'</h1><div class="meta">コード '+esc(store.code||"—")+'</div><div class="meta">'+esc(store.address||"住所未登録")+'</div>'+
     (store.phone?'<div class="meta">☎ '+esc(store.phone)+'</div>':"")+'</div><button class="star '+(store.favorite?"on":"")+'" id="detailFavorite">'+(store.favorite?"★":"☆")+'</button></div>'+
-    '<div class="actions"><button class="button secondary" id="mapButton">⌖ 地図を見る</button><button class="button primary" id="editButton">情報を変更</button></div>'+
+    '<div class="actions"><button class="button secondary" id="mapButton">⌖ 地図を見る</button><button class="button primary" id="editButton">情報を変更</button><button class="button danger" id="archiveButton">アーカイブ</button></div>'+
     '<div class="tabs"><button class="tab active" id="infoTab">配送情報</button><button class="tab" id="procedureTab">作業手順</button><button class="tab" id="photoTab">写真</button><button class="tab" id="sourceTab">出典</button></div>'+
     '<div class="info" id="detailContent">'+info+procedure+'</div></div>';
   $("detailBack").onclick=()=>navigate("search"); $("editButton").onclick=()=>edit(store.id);
+  $("archiveButton").onclick=()=>{
+    if(!confirm("「"+store.name+"」をアーカイブしますか？\n通常の店舗一覧から非表示になります。")) return;
+    store.archivedAt=now(); store.archiveReason="店舗管理からアーカイブ"; store.updatedAt=now();
+    store.history=Array.isArray(store.history)?store.history:[];
+    store.history.push({id:uid("h"),date:now(),title:"店舗アーカイブ",summary:"通常一覧からアーカイブ",editor:"管理",status:"approved"});
+    save(); navigate("search");
+  };
   $("detailFavorite").onclick=()=>{store.favorite=!store.favorite;save();render();};
   $("mapButton").onclick=()=>{if(store.address&&store.address!=="（テストデータ）")window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(store.address),"_blank");};
   $("infoTab").onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));$("infoTab").classList.add("active");$("detailContent").innerHTML=info+procedure;};
@@ -407,12 +430,44 @@ function edit(id) {
   };
 }
 
+function archivePage() {
+  const archived=state.stores.filter(x=>x.archivedAt).slice().sort((a,b)=>String(b.archivedAt).localeCompare(String(a.archivedAt)));
+  shell("アーカイブ",archived.length+"件",
+    archived.length
+      ? '<div class="archive-list">'+archived.map(store =>
+          '<article class="archive-row"><div><strong>'+esc(store.name||"名称未設定")+'</strong><small>'+esc(store.code||"コード未登録")+'</small><small>アーカイブ：'+esc(store.archivedAt||"")+'</small></div><div class="archive-actions"><button class="button secondary" data-restore-id="'+esc(store.id)+'">復元</button><button class="button danger" data-delete-id="'+esc(store.id)+'">完全削除</button></div></article>'
+        ).join("")
+      : empty("アーカイブはありません","削除した店舗はここには表示されません。")
+  );
+  document.querySelectorAll("[data-restore-id]").forEach(button=>{
+    button.onclick=()=>{
+      const store=state.stores.find(x=>x.id===button.dataset.restoreId);
+      if(!store)return;
+      store.archivedAt=null; store.archiveReason=""; store.updatedAt=now();
+      store.history=Array.isArray(store.history)?store.history:[];
+      store.history.push({id:uid("h"),date:now(),title:"店舗復元",summary:"アーカイブから復元",editor:"管理",status:"approved"});
+      save(); archivePage();
+    };
+  });
+  document.querySelectorAll("[data-delete-id]").forEach(button=>{
+    button.onclick=()=>{
+      const store=state.stores.find(x=>x.id===button.dataset.deleteId);
+      if(!store)return;
+      if(!confirm("「"+store.name+"」を完全に削除しますか？\nこの操作は元に戻せません。"))return;
+      state.stores=state.stores.filter(x=>x.id!==store.id);
+      state.courses=state.courses.map(c=>Object.assign({},c,{storeIds:c.storeIds.filter(id=>id!==store.id)}));
+      save(); archivePage();
+    };
+  });
+}
+
 function render() {
   document.querySelectorAll("[data-route]").forEach(b=>b.classList.toggle("active",b.dataset.route===state.route));
   if(state.route==="home")home();
   else if(state.route==="search")search();
   else if(state.route==="courses")coursesPage();
-  else if(state.route==="favorites"){const f=state.stores.filter(x=>x.favorite);shell("お気に入り",f.length+"件",f.length?'<div class="store-list">'+f.map(storeRow).join("")+'</div>':empty("お気に入りはまだありません"));bindStoreRows();}
+  else if(state.route==="favorites"){const f=state.stores.filter(x=>x.favorite&&!x.archivedAt);shell("お気に入り",f.length+"件",f.length?'<div class="store-list">'+f.map(storeRow).join("")+'</div>':empty("お気に入りはまだありません"));bindStoreRows();}
+  else if(state.route==="archive") archivePage();
   else detail();
 }
 
@@ -426,5 +481,5 @@ function boot() {
 document.querySelectorAll("[data-route]").forEach(button=>button.onclick=()=>navigate(button.dataset.route));
 $("brand").onclick=()=>navigate("home");
 $("newStoreButton").onclick=()=>edit();
-$("adminButton").onclick=()=>alert("管理機能は次の実装段階で追加します。");
+$("adminButton").onclick=()=>navigate("archive");
 import("./test-data.js").then(m=>{window.NIWASAKI_TEST_STORES=m.NIWASAKI_TEST_STORES;boot();}).catch(()=>boot());
