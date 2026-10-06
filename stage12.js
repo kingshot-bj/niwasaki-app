@@ -238,11 +238,11 @@
     const a=app(); if(!a)return;
     const title=a.querySelector(".page-title")?.textContent.trim();
     if(title==="コースから探す" && !a.querySelector("#stageNewCourse")){
-      const head=a.querySelector(".section-head");
+      const head=a.querySelector(".page-head");
       if(head){
         const b=document.createElement("button");
         b.id="stageNewCourse";b.className="button secondary";b.textContent="＋ コース登録";
-        b.onclick=()=>courseEditor(); head.parentElement.insertBefore(b, head.parentElement.firstChild);
+        b.onclick=()=>courseEditor(); head.appendChild(b);
       }
       a.querySelectorAll("[data-course-id]").forEach(card=>{
         if(card.dataset.stageBound)return;
