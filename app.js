@@ -245,8 +245,7 @@ function detail() {
     '<div class="info" id="detailContent">'+info+procedure+'</div></div>';
   $("detailBack").onclick=()=>navigate("search"); $("editButton").onclick=()=>edit(store.id);
   $("archiveButton").onclick=()=>{
-    if(!confirm("「"+store.name+"」をアーカイブしますか？
-通常の店舗一覧から非表示になります。")) return;
+    if(!confirm("「"+store.name+"」をアーカイブしますか？\n通常の店舗一覧から非表示になります。")) return;
     store.archivedAt=now(); store.archiveReason="店舗管理からアーカイブ"; store.updatedAt=now();
     store.history=Array.isArray(store.history)?store.history:[];
     store.history.push({id:uid("h"),date:now(),title:"店舗アーカイブ",summary:"通常一覧からアーカイブ",editor:"管理",status:"approved"});
@@ -271,7 +270,7 @@ function photoGallery(store, editable=false) {
       '<img src="' + esc(p.dataUrl || p.url || "") + '" alt="' + esc(p.caption || p.category || "店舗写真") + '">' +
       '<div class="photo-meta">' +
       (editable ? '<label class="photo-edit-label">項目名<select class="photo-edit-category" data-photo-id="' + esc(p.id) + '">' +
-        ['搬入口','駐車場所','納品場所','車両進入経路','鍵・警備','空ケース等の置き場所','時間制限','注意事項','作業手順','店舗情報','その他'].map(cat => '<option value="'+esc(cat)+'" '+(p.category===cat?'selected':'')+'>'+esc(cat)+'</option>').join("") +
+        ['搬入口','駐車場所','納品場所','車両進入経路','鍵・警備','空ケース等の置き場所','時間制限','注意事項','作業手順','店舗情報','その他'].map(cat => '<option value="' + esc(cat) + '" ' + (p.category === cat ? 'selected' : '') + '>' + esc(cat) + '</option>').join("") +
         '</select></label><label class="photo-edit-label">説明<input class="photo-edit-caption" data-photo-id="' + esc(p.id) + '" value="' + esc(p.caption || "") + '" placeholder="写真の説明"></label>' :
         '<strong>' + esc(p.category || "写真") + '</strong>' + (p.caption ? '<span>' + esc(p.caption) + '</span>' : '')) +
       (p.capturedAt ? '<small>' + esc(p.capturedAt) + '</small>' : '') +
@@ -281,7 +280,20 @@ function photoGallery(store, editable=false) {
   return '<div class="photo-grid">' + cards + '</div>';
 }
 
-function bindPhotoMetaEdit(store) {const saveField=(selector,key)=>document.querySelectorAll(selector).forEach(el=>el.oninput=()=>{const p=store.photos.find(x=>x.id===el.dataset.photoId);if(p){p[key]=el.value;save();}});saveField(".photo-edit-category","category");saveField(".photo-edit-caption","caption");}
+function bindPhotoMetaEdit(store) {
+  document.querySelectorAll(".photo-edit-category").forEach(el => {
+    el.onchange = () => {
+      const photo = store.photos.find(x => x.id === el.dataset.photoId);
+      if (photo) { photo.category = el.value; save(); }
+    };
+  });
+  document.querySelectorAll(".photo-edit-caption").forEach(el => {
+    el.oninput = () => {
+      const photo = store.photos.find(x => x.id === el.dataset.photoId);
+      if (photo) { photo.caption = el.value; save(); }
+    };
+  });
+}
 
 function bindPhotoRemove(store) {
   document.querySelectorAll(".photo-remove").forEach(button => {
@@ -349,8 +361,44 @@ function addCustomField(store, label = "", value = "") {
   });
 }
 
-function procedureEditor(store){return "<section class=\"form-card\"><div class=\"section-head\"><h2>作業手順</h2><button class=\"button secondary\" type=\"button\" id=\"addProcedure\">＋ 手順を追加</button></div><div id=\"procedureEditor\"></div></section>";}
-function bindProcedureEditor(store){const wrap=$("procedureEditor");if(!wrap)return;wrap.innerHTML=(store.procedure||[]).map((x,i)=>"<div class=\"procedure-edit-row\" data-i=\""+i+"\"><span>"+(i+1)+"</span><textarea class=\"procedure-input\" rows=\"1\">"+esc(x)+"</textarea><button type=\"button\" class=\"button secondary procedure-remove\">削除</button></div>").join("")||"<div class=\"empty\">作業手順はありません</div>";wrap.querySelectorAll(".procedure-input").forEach(input=>{input.oninput=()=>{store.procedure[Number(input.closest("[data-i]").dataset.i)]=input.value;input.style.height="auto";input.style.height=Math.max(input.scrollHeight,46)+"px"};input.oninput()});wrap.querySelectorAll(".procedure-remove").forEach(b=>b.onclick=()=>{store.procedure.splice(Number(b.closest("[data-i]").dataset.i),1);bindProcedureEditor(store)});}
+function procedureEditor(store) {
+  store.procedure = Array.isArray(store.procedure) ? store.procedure : [];
+  const rows = store.procedure.map((item, index) =>
+    '<div class="procedure-edit-row" data-procedure-index="' + index + '">' +
+      '<span class="procedure-number">' + (index + 1) + '</span>' +
+      '<textarea class="procedure-input" rows="1" placeholder="作業手順を入力">' + esc(item || "") + '</textarea>' +
+      '<button class="button secondary procedure-remove" type="button">削除</button>' +
+    '</div>'
+  ).join("");
+  return '<section class="form-card"><div class="section-head"><h2>作業手順</h2>' +
+    '<button class="button secondary" type="button" id="addProcedure">＋ 手順を追加</button></div>' +
+    '<div id="procedureEditor">' + (rows || '<div class="empty">作業手順はありません</div>') + '</div></section>';
+}
+
+function bindProcedureEditor(store) {
+  const wrap = $("procedureEditor");
+  if (!wrap) return;
+  wrap.querySelectorAll(".procedure-input").forEach(input => {
+    const grow = () => {
+      input.style.height = "auto";
+      input.style.height = Math.max(input.scrollHeight, 46) + "px";
+    };
+    input.oninput = () => {
+      const row = input.closest(".procedure-edit-row");
+      store.procedure[Number(row.dataset.procedureIndex)] = input.value;
+      grow();
+    };
+    grow();
+  });
+  wrap.querySelectorAll(".procedure-remove").forEach(button => {
+    button.onclick = () => {
+      const row = button.closest(".procedure-edit-row");
+      store.procedure.splice(Number(row.dataset.procedureIndex), 1);
+      bindProcedureEditor(store);
+    };
+  });
+}
+
 function customFieldEditor(store) {
   store.customFields = Array.isArray(store.customFields) ? store.customFields : [];
   const rows = store.customFields.map((item, index) =>
@@ -413,10 +461,10 @@ function edit(id) {
   $("app").innerHTML='<div class="detail"><button class="back" id="cancelEdit">‹ 戻る</button><div class="page-head"><h1 class="page-title">'+(isNew?"店舗を登録":"情報を変更")+'</h1></div><form id="storeForm">'+
     '<section class="form-card"><h2>基本情報</h2><div class="form-grid"><div class="field"><label>状態</label><select id="field_status"><option>通常</option><option>一時停止</option><option>閉店</option><option>移転</option><option>未確認</option></select></div>'+field("name","店舗名",store)+field("code","店舗コード",store)+field("address","住所",store)+field("phone","電話番号",store)+field("course","コース",store)+'</div></section>'+
     '<section class="form-card"><h2>配送情報</h2><div class="form-grid">'+field("deliveryPlace","納品場所",store)+field("entrance","搬入口",store)+field("parking","駐車場所",store)+field("vehicleRoute","車両進入経路",store)+field("security","鍵・警備",store)+field("emptyCases","空ケース等の置き場所",store)+field("timeRestriction","時間制限",store)+field("notes","注意事項",store,true)+'</div></section>'+
-    procedureEditor(store)+'<section class="form-card"><div class="section-head"><h2>写真</h2></div><div class="photo-upload"><label>項目名<select id="photoCategory"><option value="搬入口">搬入口</option><option value="駐車場所">駐車場所</option><option value="納品場所">納品場所</option><option value="車両進入経路">車両進入経路</option><option value="鍵・警備">鍵・警備</option><option value="空ケース等の置き場所">空ケース等の置き場所</option><option value="時間制限">時間制限</option><option value="注意事項">注意事項</option><option value="作業手順">作業手順</option><option value="店舗情報">店舗情報</option><option value="その他">その他</option></select></label><label id="photoOtherWrap" class="hidden-field">その他の項目名<input id="photoOtherCategory" placeholder="項目名を入力"></label><label>写真<input id="photoInput" type="file" accept="image/*" multiple></label><label>説明<input id="photoCaption" placeholder="写真の説明"></label><button class="button secondary" type="button" id="photoAddButton">写真を追加</button></div><div id="editPhotos">' + photoGallery(store,true) + '</div></section>'+
+    procedureEditor(store)+
+    '<section class="form-card"><div class="section-head"><h2>写真</h2></div><div class="photo-upload"><label>項目名<select id="photoCategory"><option value="搬入口">搬入口</option><option value="駐車場所">駐車場所</option><option value="納品場所">納品場所</option><option value="車両進入経路">車両進入経路</option><option value="鍵・警備">鍵・警備</option><option value="空ケース等の置き場所">空ケース等の置き場所</option><option value="時間制限">時間制限</option><option value="注意事項">注意事項</option><option value="作業手順">作業手順</option><option value="店舗情報">店舗情報</option><option value="その他">その他</option></select></label><label id="photoOtherWrap" class="hidden-field">その他の項目名<input id="photoOtherCategory" placeholder="項目名を入力"></label><label>写真<input id="photoInput" type="file" accept="image/*" multiple></label><label>説明<input id="photoCaption" placeholder="写真の説明"></label><button class="button secondary" type="button" id="photoAddButton">写真を追加</button></div><div id="editPhotos">' + photoGallery(store,true) + '</div></section>'+
     customFieldEditor(store)+
     '<div class="form-actions"><button class="button secondary" type="button" id="cancelButton">戻る</button><button class="button secondary" type="button" id="saveDraftButton">編集中として保存</button><button class="button primary" type="submit">保存して終了</button></div></form></div>';
-  $("field_status").value=store.status||"通常";
   const cancel=()=>{if(isNew&&!store.editing){state.stores=state.stores.filter(x=>x.id!==store.id);save();return navigate("search");}save();state.selectedId=store.id;state.route="detail";render();};
   $("cancelEdit").onclick=cancel; $("cancelButton").onclick=cancel;
   document.querySelectorAll("[data-autogrow]").forEach(input => {
@@ -427,8 +475,9 @@ function edit(id) {
     input.addEventListener("input", grow);
     grow();
   });
+  $("field_status").value=store.status||"通常";
   bindProcedureEditor(store);
-  $("addProcedure").onclick=()=>{store.procedure=Array.isArray(store.procedure)?store.procedure:[];store.procedure.push("");bindProcedureEditor(store)};
+  $("addProcedure").onclick=()=>{store.procedure=Array.isArray(store.procedure)?store.procedure:[];store.procedure.push("");bindProcedureEditor(store);};
   const markEditing=()=>{store.editing=true; store.editingStartedAt=store.editingStartedAt||now(); store.editingUpdatedAt=now(); store.editingBy="現場ユーザー"; store.updatedAt=store.editingUpdatedAt; save();};
   $("saveDraftButton").onclick=()=>{markEditing(); state.selectedId=store.id; state.route="detail"; render();};
   $("addCustomField").onclick=() => { addCustomField(store); renderCustomFieldEditor(store); };
@@ -498,8 +547,7 @@ function archivePage() {
     button.onclick=()=>{
       const store=state.stores.find(x=>x.id===button.dataset.deleteId);
       if(!store)return;
-      if(!confirm("「"+store.name+"」を完全に削除しますか？
-この操作は元に戻せません。"))return;
+      if(!confirm("「"+store.name+"」を完全に削除しますか？\nこの操作は元に戻せません。"))return;
       state.stores=state.stores.filter(x=>x.id!==store.id);
       state.courses=state.courses.map(c=>Object.assign({},c,{storeIds:c.storeIds.filter(id=>id!==store.id)}));
       save(); archivePage();
