@@ -328,7 +328,7 @@ function addPhotoFromFile(store, file, category, caption) {
 }
 
 function field(key,label,store,full) {
-  return '<div class="field '+(full?"full":"")+'"><label>'+label+'</label>'+(full?'<textarea id="field_'+key+'">'+esc(store[key])+'</textarea>':'<input id="field_'+key+'" value="'+esc(store[key])+'">')+'</div>';
+  return '<div class="field '+(full?"full":"")+'"><label>'+label+'</label>'+(full?'<textarea id="field_'+key+'" data-autogrow="true">'+esc(store[key])+'</textarea>':'<textarea id="field_'+key+'" data-autogrow="true" rows="1">'+esc(store[key])+'</textarea>')+'</div>';
 }
 
 function addCustomField(store, label = "", value = "") {
@@ -410,6 +410,14 @@ function edit(id) {
     '<div class="form-actions"><button class="button secondary" type="button" id="cancelButton">戻る</button><button class="button secondary" type="button" id="saveDraftButton">編集中として保存</button><button class="button primary" type="submit">保存して終了</button></div></form></div>';
   const cancel=()=>{if(isNew&&!store.editing){state.stores=state.stores.filter(x=>x.id!==store.id);save();return navigate("search");}save();state.selectedId=store.id;state.route="detail";render();};
   $("cancelEdit").onclick=cancel; $("cancelButton").onclick=cancel;
+  document.querySelectorAll("[data-autogrow]").forEach(input => {
+    const grow = () => {
+      input.style.height = "auto";
+      input.style.height = Math.max(input.scrollHeight, 46) + "px";
+    };
+    input.addEventListener("input", grow);
+    grow();
+  });
   const markEditing=()=>{store.editing=true; store.editingStartedAt=store.editingStartedAt||now(); store.editingUpdatedAt=now(); store.editingBy="現場ユーザー"; store.updatedAt=store.editingUpdatedAt; save();};
   $("saveDraftButton").onclick=()=>{markEditing(); state.selectedId=store.id; state.route="detail"; render();};
   $("addCustomField").onclick=() => { addCustomField(store); renderCustomFieldEditor(store); };
