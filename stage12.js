@@ -45,6 +45,9 @@
     try { ids = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch {}
     const stores = ids.map(id => data.stores.find(s => s.id === id)).filter(s => s && !s.archivedAt);
     if (!stores.length) return;
+    const signature = stores.map(s => s.id).join("|");
+    if (section.dataset.stageRecentSignature === signature) return;
+    section.dataset.stageRecentSignature = signature;
     section.innerHTML = '<div class="section-head"><h2>最近見た店舗</h2></div><div class="store-list">' +
       stores.map(s => '<article class="store-row stage-recent-row" data-stage-store-id="'+esc(s.id)+'"><div class="thumb"></div><div><strong>'+esc(s.name||"名称未設定")+'</strong><small>'+esc(s.code||"コード未登録")+'</small><small>'+esc(s.address||"住所未登録")+'</small></div><span class="chevron">›</span></article>').join("") +
       '</div>';
@@ -264,7 +267,12 @@
     }
   }
 
+  let observerStarted = false;
   function observe() {
+    if (observerStarted) return;
+    const target = app() || document.body;
+    if (!target) return;
+    observerStarted = true;
     const mo=new MutationObserver(()=>{
       enhanceRecent();
       installSearchMemory();
@@ -277,6 +285,10 @@
     enhanceRecent();installSearchMemory();addStickySave();installBackButtons();trackClicks();enhanceCourses();
   }
 
-  window.addEventListener("load", observe);
-  observe();
+  window.addEventListener("load", observe, {once:true});
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", observe, {once:true});
+  } else {
+    observe();
+  }
 })();
