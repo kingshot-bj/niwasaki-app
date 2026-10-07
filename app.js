@@ -504,7 +504,7 @@ function edit(id) {
     '<section class="form-card"><h2>基本情報</h2><div class="form-grid"><div class="field"><label>状態</label><select id="field_status"><option>通常</option><option>一時停止</option><option>閉店</option><option>移転</option><option>未確認</option></select></div>'+field("name","店舗名",store)+field("code","店舗コード",store)+field("address","住所",store)+field("phone","電話番号",store)+field("course","コース",store)+'</div></section>'+
     '<section class="form-card"><h2>配送情報</h2><div class="form-grid">'+field("deliveryPlace","納品場所",store)+field("entrance","搬入口",store)+field("parking","駐車場所",store)+field("vehicleRoute","車両進入経路",store)+field("security","鍵・警備",store)+field("emptyCases","空ケース等の置き場所",store)+field("timeRestriction","時間制限",store)+field("notes","注意事項",store,true)+'</div></section>'+
     procedureEditor(store)+
-    '<section class="form-card"><div class="section-head"><h2>写真</h2></div><div class="photo-upload"><label>項目名<select id="photoCategory"><option value="搬入口">搬入口</option><option value="駐車場所">駐車場所</option><option value="納品場所">納品場所</option><option value="車両進入経路">車両進入経路</option><option value="鍵・警備">鍵・警備</option><option value="空ケース等の置き場所">空ケース等の置き場所</option><option value="時間制限">時間制限</option><option value="注意事項">注意事項</option><option value="作業手順">作業手順</option><option value="店舗情報">店舗情報</option><option value="その他">その他</option></select></label><label id="photoOtherWrap" class="hidden-field">その他の項目名<input id="photoOtherCategory" placeholder="項目名を入力"></label><label>写真<input id="photoInput" type="file" accept="image/*" multiple></label><label>説明<input id="photoCaption" placeholder="写真の説明"></label><button class="button secondary" type="button" id="photoAddButton">写真を追加</button></div><div id="editPhotos">' + photoGallery(store,true) + '</div></section>'+
+    '<section class="form-card"><div class="section-head"><h2>写真</h2><span class="page-sub">複数枚を一括追加できます</span></div><div class="photo-upload"><label>項目名<select id="photoCategory"><option value="搬入口">搬入口</option><option value="駐車場所">駐車場所</option><option value="納品場所">納品場所</option><option value="車両進入経路">車両進入経路</option><option value="鍵・警備">鍵・警備</option><option value="空ケース等の置き場所">空ケース等の置き場所</option><option value="時間制限">時間制限</option><option value="注意事項">注意事項</option><option value="作業手順">作業手順</option><option value="店舗情報">店舗情報</option><option value="その他">その他</option></select></label><label id="photoOtherWrap" class="hidden-field">その他の項目名<input id="photoOtherCategory" placeholder="項目名を入力"></label><div id="photoDropZone" class="photo-drop-zone"><label>写真<input id="photoInput" type="file" accept="image/*" multiple></label><span>PCはドラッグ＆ドロップ、iPhoneは写真を選択</span></div><label>説明<input id="photoCaption" placeholder="選択した写真に共通する説明"></label><div id="photoPreview" class="photo-import-list"></div><button class="button secondary" type="button" id="photoAddButton">選択した写真を一括追加</button></div><div id="editPhotos">' + photoGallery(store,true) + '</div></section>'+
     customFieldEditor(store)+
     '<div class="form-actions"><button class="button secondary" type="button" id="cancelButton">戻る</button><button class="button secondary" type="button" id="saveDraftButton">編集中として保存</button><button class="button primary" type="submit">保存して終了</button></div></form></div>';
   const cancel=()=>{if(isNew&&!store.editing){state.stores=state.stores.filter(x=>x.id!==store.id);save();return navigate("search");}save();state.selectedId=store.id;state.route="detail";render();};
@@ -543,26 +543,94 @@ function edit(id) {
   const photoOtherWrap = $("photoOtherWrap");
   const syncPhotoCategory = () => { photoOtherWrap.classList.toggle("hidden-field", photoCategory.value !== "その他"); };
   photoCategory.onchange = syncPhotoCategory; syncPhotoCategory();
+  let pendingPhotoFiles = [];
+
+  const renderPendingPhotos = () => {
+    const wrap = $("photoPreview");
+    if (!wrap) return;
+    if (!pendingPhotoFiles.length) {
+      wrap.innerHTML = '<div class="photo-import-empty">写真を選択すると、ここに取り込み前の一覧が表示されます。</div>';
+      return;
+    }
+    wrap.innerHTML = pendingPhotoFiles.map((file, index) => {
+      const size = file.size >= 1024 * 1024
+        ? (file.size / 1024 / 1024).toFixed(1) + "MB"
+        : Math.max(1, Math.round(file.size / 1024)) + "KB";
+      return '<article class="photo-import-item">' +
+        '<div class="photo-import-thumb" data-photo-preview="' + index + '"></div>' +
+        '<div class="photo-import-info"><strong>' + esc(file.name) + '</strong><small>' + esc(size) + '</small></div>' +
+        '<button type="button" class="button secondary photo-pending-remove" data-pending-index="' + index + '">外す</button>' +
+        '</article>';
+    }).join("");
+    pendingPhotoFiles.forEach((file, index) => {
+      const target = document.querySelector('[data-photo-preview="' + index + '"]');
+      if (!target) return;
+      const reader = new FileReader();
+      reader.onload = () => { target.innerHTML = '<img src="' + esc(reader.result) + '" alt="">'; };
+      reader.readAsDataURL(file);
+    });
+    document.querySelectorAll(".photo-pending-remove").forEach(button => {
+      button.onclick = () => {
+        pendingPhotoFiles.splice(Number(button.dataset.pendingIndex), 1);
+        renderPendingPhotos();
+      };
+    });
+  };
+
+  const collectPhotoFiles = (files) => {
+    const valid = Array.from(files || []).filter(file => file && file.type && file.type.startsWith("image/"));
+    const invalid = Array.from(files || []).length - valid.length;
+    if (invalid) alert(invalid + "件は画像ファイルではないため除外しました。");
+    pendingPhotoFiles = pendingPhotoFiles.concat(valid);
+    renderPendingPhotos();
+  };
+
+  $("photoInput").onchange = () => collectPhotoFiles($("photoInput").files);
+  $("photoDropZone").ondragover = (event) => { event.preventDefault(); $("photoDropZone").classList.add("drag-over"); };
+  $("photoDropZone").ondragleave = () => $("photoDropZone").classList.remove("drag-over");
+  $("photoDropZone").ondrop = (event) => {
+    event.preventDefault();
+    $("photoDropZone").classList.remove("drag-over");
+    collectPhotoFiles(event.dataTransfer.files);
+  };
+
   $("photoAddButton").onclick = async () => {
-    const input = $("photoInput");
-    const files = Array.from(input.files || []);
-    if (!files.length) return;
+    if (!pendingPhotoFiles.length) {
+      alert("先に写真を選択してください。");
+      return;
+    }
     const selectedCategory = $("photoCategory").value;
     const category = selectedCategory === "その他" ? ($("photoOtherCategory").value.trim() || "その他") : selectedCategory;
     const caption = $("photoCaption").value.trim();
+    const button = $("photoAddButton");
+    button.disabled = true;
+    const originalText = button.textContent;
+    let added = 0;
     try {
-      for (const file of files) await addPhotoFromFile(store, file, category, caption);
+      for (const file of pendingPhotoFiles) {
+        await addPhotoFromFile(store, file, category, caption);
+        added++;
+      }
+      pendingPhotoFiles = [];
       $("photoInput").value = "";
       $("photoCaption").value = "";
       $("photoOtherCategory").value = "";
+      renderPendingPhotos();
       $("editPhotos").innerHTML = photoGallery(store,true);
       bindPhotoMetaEdit(store);
       bindPhotoRemove(store);
+      alert(added + "枚の写真を追加しました。");
     } catch (error) {
-      alert(error && error.message ? error.message : "写真を追加できませんでした。");
+      alert((added ? added + "枚を追加しました。 " : "") + (error && error.message ? error.message : "写真を追加できませんでした。"));
       console.error(error);
+      pendingPhotoFiles = pendingPhotoFiles.slice(added);
+      renderPendingPhotos();
+    } finally {
+      button.disabled = false;
+      button.textContent = originalText;
     }
   };
+  renderPendingPhotos();
   $("storeForm").onsubmit=(event)=>{event.preventDefault();
     ["name","code","address","phone","course","deliveryPlace","entrance","parking","vehicleRoute","security","emptyCases","timeRestriction","notes"].forEach(k=>store[k]=$("field_"+k).value.trim());
     store.status=$("field_status").value||store.status||"通常";
